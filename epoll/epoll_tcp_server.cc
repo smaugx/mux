@@ -1,4 +1,4 @@
-#include "epoll_tcp_socket.h"
+#include "epoll_tcp_server.h"
 
 #include <arpa/inet.h>
 #include <errno.h>
@@ -11,6 +11,7 @@
 #include <sys/epoll.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <cassert>
 
 #include <iostream>
 
@@ -52,11 +53,7 @@ bool EpollTcpServer::Start() {
     std::cout << "EpollTcpServer Init success!" << std::endl;
     handle_ = listenfd;
 
-    struct epoll_event events; 
-    events.data.fd = handle_;
-    // listen fd only care epollin
-    events.events = EPOLLIN | EPOLLET;
-    int er = UpdateEpollEvents(efd_, EPOLL_CTL_ADD, handle_, events);
+    int er = UpdateEpollEvents(efd_, EPOLL_CTL_ADD, handle_, EPOLLIN | EPOLLET);
     if (er < 0) {
         ::close(handle_);
         return false;
@@ -182,11 +179,7 @@ void EpollTcpServer::OnSocketAccept() {
             continue;
         }
 
-        struct epoll_event events; 
-        events.data.fd = cli_fd;
-        // Register for read events, disconnection events and enable edge triggered behavior for the FD.
-        events.events = EPOLLIN | EPOLLRDHUP | EPOLLET;
-        int er = UpdateEpollEvents(efd_, EPOLL_CTL_ADD, cli_fd, events);
+        int er = UpdateEpollEvents(efd_, EPOLL_CTL_ADD, cli_fd, EPOLLIN | EPOLLRDHUP | EPOLLET);
         if (er < 0 ) {
             ::close(cli_fd);
             continue;
@@ -240,20 +233,20 @@ void EpollTcpServer::OnSocketWrite(int32_t fd) {
 }
 
 int32_t EpollTcpServer::SendData(const SocketDataPtr& data) {
-    if (data.fd <= 0) {
+    if (data->fd_ <= 0) {
         return -1;
     }
-    int r = ::write(data->fd, data->msg.data(), data->msg.size());
+    int r = ::write(data->fd_, data->msg_.data(), data->msg_.size());
     if (r == -1) {
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
             return -1;
         }
         // error happend
-        ::close(fd);
-        std::cout << "fd: " << fd << " write error, close it!" << std::endl;
+        ::close(data->fd_);
+        std::cout << "fd: " << data->fd_ << " write error, close it!" << std::endl;
         return -1;
     }
-    std::cout << "fd: " << fd << " write size: " << r << " ok!" << std::endl;
+    std::cout << "fd: " << data->fd_ << " write size: " << r << " ok!" << std::endl;
     return r;
 }
 

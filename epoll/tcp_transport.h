@@ -11,9 +11,6 @@ namespace mux {
 
 namespace transport {
 
-class ETServer;
-typedef std::shared_ptr<ETServer> ETServerPtr;
-
 class TcpTransport : public Transport {
 public:
     TcpTransport()                                     = default;
@@ -40,7 +37,7 @@ private:
     std::string local_ip_;
     uint16_t local_port_ { 0 };
 
-    ETBase sock_{ nullptr };
+    ETBasePtr sock_{ nullptr };
 };
 
 typedef std::shared_ptr<TcpTransport> TcpTransportPtr;

@@ -35,11 +35,11 @@ public:
     virtual ~EpollTcpBase()  = 0 ;
 
 public:
-    bool Start() = 0;
-    bool Stop()  = 0;
-    int32_t SendData(const SocketDataPtr& data) = 0;
-    void RegisterOnRecvCallback(callback_recv_t callback) = 0;
-    void UnRegisterOnRecvCallback() = 0;
+    virtual bool Start() = 0;
+    virtual bool Stop()  = 0;
+    virtual int32_t SendData(const SocketDataPtr& data) = 0;
+    virtual void RegisterOnRecvCallback(callback_recv_t callback) = 0;
+    virtual void UnRegisterOnRecvCallback() = 0;
 };
 
 using ETBase = EpollTcpBase;
