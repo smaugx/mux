@@ -61,10 +61,11 @@ bool EpollTcpServer::Start() {
 
     assert(!th_loop_);
 
-    th_loop_ = std::make_shared<std::thread>(std::bind(&EpollTcpServer::EpollLoop, this));
+    th_loop_ = std::make_shared<std::thread>(&EpollTcpServer::EpollLoop, this);
     if (!th_loop_) {
         return false;
     }
+    th_loop_->detach();
 
     return true;
 }

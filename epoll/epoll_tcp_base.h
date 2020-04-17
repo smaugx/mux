@@ -32,7 +32,7 @@ public:
     EpollTcpBase& operator=(const EpollTcpBase& other) = delete;
     EpollTcpBase(EpollTcpBase&& other)                 = delete;
     EpollTcpBase& operator=(EpollTcpBase&& other)      = delete;
-    virtual ~EpollTcpBase()  = 0 ;
+    virtual ~EpollTcpBase()                            = default; 
 
 public:
     virtual bool Start() = 0;
