@@ -4,44 +4,29 @@
 #include <memory>
 #include <thread>
 
+#include "epoll_tcp_base.h"
+
 namespace mux {
 
 namespace transport {
 
-typedef struct SocketData {
-public:
-    SocketData()
-        : fd_ { -1 },
-          msg_ { "" } {}
-    SocketData(int32_t fd, const std::string& msg)
-        : fd_ { fd },
-          msg_ { msg } {}
-
-    int32_t fd_ { -1 };
-    std::string msg_;
-} SocketData;
-
-typedef std::shared_ptr<SocketData> SocketDataPtr;
-
-using callback_recv_t = std::function<void(const SocketDataPtr& data)>;
-
-class EpollTcpServer {
+class EpollTcpServer : public ETBase {
 public:
     EpollTcpServer()                                       = default;
     EpollTcpServer(const EpollTcpServer& other)            = delete;
     EpollTcpServer& operator=(const EpollTcpServer& other) = delete;
     EpollTcpServer(EpollTcpServer&& other)                 = delete;
     EpollTcpServer& operator=(EpollTcpServer&& other)      = delete;
-    virtual ~EpollTcpServer();
+    ~EpollTcpServer() override;
 
     EpollTcpServer(const std::string& local_ip, uint16_t local_port);
 
 public:
-    bool Start();
-    bool Stop();
-    int32_t SendData(const SocketDataPtr& data);
-    void RegisterOnRecvCallback(callback_recv_t callback);
-    void UnRegisterOnRecvCallback();
+    bool Start() override;
+    bool Stop() override;
+    int32_t SendData(const SocketDataPtr& data) override;
+    void RegisterOnRecvCallback(callback_recv_t callback) override;
+    void UnRegisterOnRecvCallback() override;
 
 protected:
     int32_t CreateEpoll();

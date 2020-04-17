@@ -17,8 +17,8 @@ public:
     virtual ~Transport()                         = default;
 
 public:
-    virtual int Start(const std::string& local_ip, uint16_t local_port) = 0;
-    virtual int Stop() = 0;
+    virtual bool Start() = 0;
+    virtual bool Stop() = 0;
 
 };
 
