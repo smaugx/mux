@@ -3,5 +3,3 @@ main
 .sconsign.dblite
 log
 log/*
-client
-echo_server

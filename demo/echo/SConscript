@@ -7,10 +7,13 @@ import sys
 Import('env')
 env =  env.Clone()
 
-epoll_server = ['server_main.cc', '../../transport/tcp_transport.cc', '../../epoll/epoll_tcp_client.cc', '../../epoll/epoll_tcp_server.cc']
-epoll_client = ['client_main.cc', '../../transport/tcp_transport.cc', '../../epoll/epoll_tcp_client.cc', '../../epoll/epoll_tcp_server.cc']
+epoll_server = ['echo_server.cc', '../../transport/tcp_transport.cc', '../../epoll/epoll_tcp_client.cc', '../../epoll/epoll_tcp_server.cc']
+epoll_client = ['client.cc', '../../transport/tcp_transport.cc', '../../epoll/epoll_tcp_client.cc', '../../epoll/epoll_tcp_server.cc']
 
-env.Program(target = 'echo_server',
+project_dir  = env['MUX_DIR']
+bin_dir = os.path.join(project_dir, "sbuild/bin")
+
+env.Program(target = os.path.join(bin_dir, "echo_server"),
         source  = epoll_server,
         CPPPATH = env['headers'],
         LIBPATH = env['libs'],
@@ -19,7 +22,7 @@ env.Program(target = 'echo_server',
         )
 
 
-env.Program(target = 'client',
+env.Program(target = os.path.join(bin_dir, "client"),
         source  = epoll_client,
         CPPPATH = env['headers'],
         LIBPATH = env['libs'],
