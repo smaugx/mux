@@ -1,3 +1,5 @@
+#include <unistd.h>
+
 #include <thread>
 #include <memory>
 #include <string>
@@ -19,7 +21,7 @@ int main(int argc, char* argv[]) {
 
 
     auto recv_call = [](const transport::SocketDataPtr& data) -> void {
-        std::cout << "in recv call: fd:" << data->fd_ << " msg.size:" << data->msg_.size() << std::endl;
+        ::write(1, data->msg_.data(), data->msg_.size());
         return;
     };
 
@@ -29,21 +31,26 @@ int main(int argc, char* argv[]) {
         std::cout << "tcp_client start failed!" << std::endl;
         exit(1);
     }
-    std::cout << "############tcp_client started!################" << std::endl;
+    std::cout << "############tcp_client started!################\n" << std::endl;
 
+    /*
     uint32_t send_total = 1000000;
     auto start = std::chrono::system_clock::now();
     for (uint32_t i = 0; i < send_total; ++i) {
         std::string msg('c', 200);
         msg += std::to_string(i);
-        tcp_client->SendData(0, msg);
     }
     auto end = std::chrono::system_clock::now();
     std::chrono::duration<double> diff = end - start;
     std::cout << "send "<< send_total << " packets,time takes:" << diff.count() << std::endl;
+    */
 
     while (true) {
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        std::cout << std::endl << " input:";
+        auto data = std::make_shared<transport::SocketData>();
+        std::getline(std::cin, data->msg_);
+        tcp_client->SendData(data);
+        //std::this_thread::sleep_for(std::chrono::seconds(1));
     }
 
     return 0;
