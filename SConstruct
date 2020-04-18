@@ -12,9 +12,9 @@ env = Environment()
 abs_path = os.getcwd()
 print abs_path
 
-headers = ['']
+headers = ['.','./third-party/include']
 
-libs = ['']
+libs = ['./third-party/lib']
 
 abs_headers = []
 for header in headers:
