@@ -17,7 +17,6 @@ int main(int argc, char* argv[]) {
         exit(-1);
     }
 
-
     auto recv_call = [](const transport::SocketDataPtr& data) -> void {
         std::cout << "in recv call: fd:" << data->fd_ << " msg.size:" << data->msg_.size() << std::endl;
         return;

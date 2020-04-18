@@ -1,1 +1,3 @@
 main
+*.o
+.sconsign.dblite

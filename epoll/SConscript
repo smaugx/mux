@@ -1,0 +1,28 @@
+#!/usr/bin/env python
+#-*- coding:utf-8 -*-
+
+import os
+import sys
+
+Import('env')
+env =  env.Clone()
+
+epoll_server = ['server_main.cc', 'epoll_tcp_client.cc', 'epoll_tcp_server.cc', 'tcp_transport.cc']
+epoll_client = ['client_main.cc', 'epoll_tcp_client.cc', 'epoll_tcp_server.cc', 'tcp_transport.cc']
+
+env.Program(target = 'epoll_server',
+        source  = epoll_server,
+        CPPPATH = env['headers'],
+        LIBPATH = env['libs'],
+        LIBS    = ['pthread'],
+        CCFLAGS = '-ggdb -std=c++11'
+        )
+
+
+env.Program(target = 'epoll_client',
+        source  = epoll_client,
+        CPPPATH = env['headers'],
+        LIBPATH = env['libs'],
+        LIBS    = ['pthread'],
+        CCFLAGS = '-ggdb -std=c++11'
+        )
