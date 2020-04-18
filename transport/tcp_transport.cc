@@ -1,11 +1,11 @@
-#include "tcp_transport.h"
+#include "transport/tcp_transport.h"
 
 #include <cassert>
 
 #include <iostream>
 
-#include "epoll_tcp_server.h"
-#include "epoll_tcp_client.h"
+#include "epoll/epoll_tcp_server.h"
+#include "epoll/epoll_tcp_client.h"
 
 
 
@@ -31,6 +31,7 @@ TcpTransport::TcpTransport(
 }
 
 TcpTransport::~TcpTransport() {
+    Stop();
 }
 
 

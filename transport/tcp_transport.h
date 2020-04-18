@@ -3,8 +3,8 @@
 #include <string>
 #include <memory>
 
-#include "transport.h"
-#include "epoll_tcp_server.h"
+#include "transport/transport.h"
+#include "epoll/epoll_tcp_server.h"
 
 
 namespace mux {
@@ -37,6 +37,8 @@ private:
     std::string ip_;  // for server is local_ip; for client is server_ip
     uint16_t port_ { 0 }; // for server is local_port; for client is server_port
 
+    // replace sock_ with other way, such as asio
+    // using epoll
     ETBasePtr sock_{ nullptr };
 };
 

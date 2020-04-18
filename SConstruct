@@ -36,4 +36,4 @@ env["MUX_DIR"] = abs_path
 Export('env')
 
 
-SConscript(['./epoll/SConscript'])
+SConscript(['./demo/SConscript'])
