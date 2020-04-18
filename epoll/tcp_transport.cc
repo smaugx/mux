@@ -5,6 +5,7 @@
 #include <iostream>
 
 #include "epoll_tcp_server.h"
+#include "epoll_tcp_client.h"
 
 
 
@@ -13,18 +14,18 @@ namespace mux {
 namespace transport {
 
 TcpTransport::TcpTransport(
-        const std::string& local_ip,
-        uint16_t local_port,
+        const std::string& ip,
+        uint16_t port,
         bool is_server)
     : is_server_ { is_server },
-      local_ip_ { local_ip },
-      local_port_ { local_port } {
+      ip_ { ip },
+      port_ { port } {
 
     assert(!sock_);
     if (is_server_) {
-        sock_ = std::make_shared<ETServer>(local_ip_, local_port_);
+        sock_ = std::make_shared<ETServer>(ip_, port_);
     } else {
-        //sock_ = std::make_shared<ETClient>(local_ip_, local_port_);
+        sock_ = std::make_shared<ETClient>(ip_, port_);
     }
     assert(sock_);
 }
@@ -34,8 +35,8 @@ TcpTransport::~TcpTransport() {
 
 
 bool TcpTransport::Start() {
-    if (local_ip_.empty() || local_port_ == 0) {
-        std::cout << "invalid local_ip: " << local_ip_ << " local_port: " << local_port_ << std::endl;
+    if (ip_.empty() || port_ == 0) {
+        std::cout << "invalid ip: " << ip_ << " port: " << port_ << std::endl;
         return false;
     }
     if (!sock_) {
@@ -72,8 +73,6 @@ void TcpTransport::UnRegisterOnRecvCallback() {
 }
 
 
+} // end namespace transport
 
-
-}
-
-}
+} // end namespace mux

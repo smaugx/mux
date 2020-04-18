@@ -10,16 +10,16 @@ namespace mux {
 
 namespace transport {
 
-class EpollTcpServer : public ETBase {
+class EpollTcpClient : public ETBase {
 public:
-    EpollTcpServer()                                       = default;
-    EpollTcpServer(const EpollTcpServer& other)            = delete;
-    EpollTcpServer& operator=(const EpollTcpServer& other) = delete;
-    EpollTcpServer(EpollTcpServer&& other)                 = delete;
-    EpollTcpServer& operator=(EpollTcpServer&& other)      = delete;
-    ~EpollTcpServer() override;
+    EpollTcpClient()                                       = default;
+    EpollTcpClient(const EpollTcpClient& other)            = delete;
+    EpollTcpClient& operator=(const EpollTcpClient& other) = delete;
+    EpollTcpClient(EpollTcpClient&& other)                 = delete;
+    EpollTcpClient& operator=(EpollTcpClient&& other)      = delete;
+    ~EpollTcpClient() override;
 
-    EpollTcpServer(const std::string& local_ip, uint16_t local_port);
+    EpollTcpClient(const std::string& server_ip, uint16_t server_port);
 
 public:
     bool Start() override;
@@ -31,28 +31,26 @@ public:
 protected:
     int32_t CreateEpoll();
     int32_t CreateSocket();
-    int32_t MakeSocketNonBlock(int32_t fd);
-    int32_t Listen(int32_t listenfd);
+    int32_t Connect(int32_t listenfd);
     int32_t UpdateEpollEvents(int efd, int op, int fd, int events);
-    void OnSocketAccept();
     void OnSocketRead(int32_t fd);
     void OnSocketWrite(int32_t fd);
     void EpollLoop();
 
 
 private:
-    std::string local_ip_;
-    uint16_t local_port_ { 0 };
-    int32_t handle_ { -1 }; // listenfd
+    std::string server_ip_;
+    uint16_t server_port_ { 0 };
+    int32_t handle_ { -1 }; // client fd
     int32_t efd_ { -1 }; // epoll fd
     std::shared_ptr<std::thread> th_loop_ { nullptr };
     bool loop_flag_ { true };
     callback_recv_t recv_callback_ { nullptr };
 };
 
-using ETServer = EpollTcpServer;
+using ETClient = EpollTcpClient;
 
-typedef std::shared_ptr<ETServer> ETServerPtr;
+typedef std::shared_ptr<ETClient> ETClientPtr;
 
 }
 

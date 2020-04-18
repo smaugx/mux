@@ -19,7 +19,7 @@ public:
     TcpTransport(TcpTransport&& other)                 = delete;
     TcpTransport& operator=(TcpTransport&& other)      = delete;
 
-    TcpTransport(const std::string& local_ip, uint16_t local_port, bool is_server);
+    TcpTransport(const std::string& ip, uint16_t port, bool is_server);
 
     ~TcpTransport() override;
 
@@ -34,8 +34,8 @@ public:
 
 private:
     bool is_server_ { true }; // role is server as default
-    std::string local_ip_;
-    uint16_t local_port_ { 0 };
+    std::string ip_;  // for server is local_ip; for client is server_ip
+    uint16_t port_ { 0 }; // for server is local_port; for client is server_port
 
     ETBasePtr sock_{ nullptr };
 };
