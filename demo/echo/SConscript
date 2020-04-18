@@ -7,8 +7,8 @@ import sys
 Import('env')
 env =  env.Clone()
 
-epoll_server = ['server_main.cc', '../transport/tcp_transport.cc', '../epoll/epoll_tcp_client.cc', '../epoll/epoll_tcp_server.cc']
-epoll_client = ['client_main.cc', '../transport/tcp_transport.cc', '../epoll/epoll_tcp_client.cc', '../epoll/epoll_tcp_server.cc']
+epoll_server = ['server_main.cc', '../../transport/tcp_transport.cc', '../../epoll/epoll_tcp_client.cc', '../../epoll/epoll_tcp_server.cc']
+epoll_client = ['client_main.cc', '../../transport/tcp_transport.cc', '../../epoll/epoll_tcp_client.cc', '../../epoll/epoll_tcp_server.cc']
 
 env.Program(target = 'epoll_server',
         source  = epoll_server,
