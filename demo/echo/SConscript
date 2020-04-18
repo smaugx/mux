@@ -10,7 +10,7 @@ env =  env.Clone()
 epoll_server = ['server_main.cc', '../../transport/tcp_transport.cc', '../../epoll/epoll_tcp_client.cc', '../../epoll/epoll_tcp_server.cc']
 epoll_client = ['client_main.cc', '../../transport/tcp_transport.cc', '../../epoll/epoll_tcp_client.cc', '../../epoll/epoll_tcp_server.cc']
 
-env.Program(target = 'epoll_server',
+env.Program(target = 'echo_server',
         source  = epoll_server,
         CPPPATH = env['headers'],
         LIBPATH = env['libs'],
@@ -19,7 +19,7 @@ env.Program(target = 'epoll_server',
         )
 
 
-env.Program(target = 'epoll_client',
+env.Program(target = 'client',
         source  = epoll_client,
         CPPPATH = env['headers'],
         LIBPATH = env['libs'],

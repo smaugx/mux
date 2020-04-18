@@ -2,3 +2,6 @@ main
 *.o
 .sconsign.dblite
 log
+log/*
+client
+echo_server

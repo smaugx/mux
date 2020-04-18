@@ -15,6 +15,7 @@
 
 #include <iostream>
 
+#include "mbase/mux_log.h"
 
 namespace mux {
 
@@ -50,7 +51,6 @@ bool EpollTcpServer::Start() {
     if (lr < 0) {
         return false;
     }
-    std::cout << "EpollTcpServer Init success!" << std::endl;
     handle_ = listenfd;
 
     int er = UpdateEpollEvents(efd_, EPOLL_CTL_ADD, handle_, EPOLLIN | EPOLLET);
@@ -63,10 +63,13 @@ bool EpollTcpServer::Start() {
 
     th_loop_ = std::make_shared<std::thread>(&EpollTcpServer::EpollLoop, this);
     if (!th_loop_) {
+        MUX_ERROR("create thread for epollloop failed");
         return false;
     }
     th_loop_->detach();
 
+    MUX_INFO("EpollTcpServer Start OK, local ip:{0} port:{1}", local_ip_, local_port_);
+    MUX_DEBUG("EpollTcpServer Start OK, local ip:{0} port:{1}", local_ip_, local_port_);
     return true;
 }
 
@@ -75,14 +78,14 @@ bool EpollTcpServer::Stop() {
     loop_flag_ = false;
     ::close(handle_);
     ::close(efd_);
-    std::cout << "stop epoll!" << std::endl;
     UnRegisterOnRecvCallback();
+    MUX_INFO("EpollTcpServer Stop OK");
 }
 
 int32_t EpollTcpServer::CreateEpoll() {
     int epollfd = epoll_create(1);
     if (epollfd < 0) {
-        std::cout << "epoll_create failed!" << std::endl;
+        MUX_ERROR("epoll_create failed!");
         return -1;
     }
     efd_ = epollfd;
@@ -92,7 +95,7 @@ int32_t EpollTcpServer::CreateEpoll() {
 int32_t EpollTcpServer::CreateSocket() {
     int listenfd = ::socket(AF_INET, SOCK_STREAM, 0);
     if (listenfd < 0) {
-        std::cout << "create socket " << local_ip_ << ":" << local_port_ << " failed!" << std::endl;
+        MUX_ERROR("create socket failed!");
         return -1;
     }
 
@@ -104,23 +107,22 @@ int32_t EpollTcpServer::CreateSocket() {
 
     int r = ::bind(listenfd, (struct sockaddr*)&addr, sizeof(struct sockaddr));
     if (r != 0) {
-        std::cout << "bind socket " << local_ip_ << ":" << local_port_ << " failed!" << std::endl;
+        MUX_ERROR("bind socket local_ip:{0} local_port:{1} failed", local_ip_, local_port_);
         ::close(listenfd);
         return -1;
     }
-    std::cout << "create and bind socket " << local_ip_ << ":" << local_port_ << " success!" << std::endl;
     return listenfd;
 }
 
 int32_t EpollTcpServer::MakeSocketNonBlock(int32_t fd) {
     int flags = fcntl(fd, F_GETFL, 0);
     if (flags < 0) {
-        std::cout << "fcntl failed!" << std::endl;
+        MUX_ERROR("fcntl failed in fd:{0}", fd);
         return -1;
     }
     int r = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
     if (r < 0) {
-        std::cout << "fcntl failed!" << std::endl;
+        MUX_ERROR("fcntl failed in fd:{0}", fd);
         return -1;
     }
     return 0;
@@ -129,7 +131,7 @@ int32_t EpollTcpServer::MakeSocketNonBlock(int32_t fd) {
 int32_t EpollTcpServer::Listen(int32_t listenfd) {
     int r = ::listen(listenfd, SOMAXCONN);
     if ( r < 0) {
-        std::cout << "listen failed!" << std::endl;
+        MUX_ERROR("listen failed");
         return -1;
     }
     return 0;
@@ -140,10 +142,9 @@ int32_t EpollTcpServer::UpdateEpollEvents(int efd, int op, int fd, int events) {
     memset(&ev, 0, sizeof(ev));
     ev.events = events;
     ev.data.fd = fd;
-    fprintf(stdout,"%s fd %d events read %d write %d\n", op == EPOLL_CTL_MOD ? "mod" : "add", fd, ev.events & EPOLLIN, ev.events & EPOLLOUT);
     int r = epoll_ctl(efd, op, fd, &ev);
     if (r < 0) {
-        std::cout << "epoll_ctl failed!" << std::endl;
+        MUX_ERROR("epoll_ctl failed for fd:{0}", fd);
         return -1;
     }
     return 0;
@@ -158,10 +159,10 @@ void EpollTcpServer::OnSocketAccept() {
         int cli_fd = accept(handle_, (struct sockaddr*)&in_addr, &in_len);
         if (cli_fd == -1) {
             if ( (errno == EAGAIN) || (errno == EWOULDBLOCK) ) {
-                std::cout << "accept all coming connections!" << std::endl;
+                MUX_INFO("accept all coming connections success");
                 break;
             } else {
-                std::cout << "accept error!" << std::endl;
+                MUX_ERROR("accept error");
                 continue;
             }
         }
@@ -170,10 +171,10 @@ void EpollTcpServer::OnSocketAccept() {
         socklen_t p_len = sizeof(peer);
         int r = getpeername(cli_fd, (struct sockaddr*)&peer, &p_len);
         if (r < 0) {
-            std::cout << "getpeername error!" << std::endl;
+            MUX_WARN("getpeername error in fd:{0}", cli_fd);
             continue;
         }
-        std::cout << "accpet connection from " << inet_ntoa(in_addr.sin_addr) << std::endl;
+        MUX_DEBUG("accept connection from {0}", inet_ntoa(in_addr.sin_addr));
         int mr = MakeSocketNonBlock(cli_fd);
         if (mr < 0) {
             ::close(cli_fd);
@@ -191,11 +192,13 @@ void EpollTcpServer::OnSocketAccept() {
 void EpollTcpServer::RegisterOnRecvCallback(callback_recv_t callback) {
     assert(!recv_callback_);
     recv_callback_ = callback;
+    MUX_INFO("register recv callback");
 }
 
 void EpollTcpServer::UnRegisterOnRecvCallback() {
     assert(recv_callback_);
     recv_callback_ = nullptr;
+    MUX_INFO("unregister recv callback");
 }
 
 // handle read events on fd
@@ -205,56 +208,63 @@ void EpollTcpServer::OnSocketRead(int32_t fd) {
     int n = -1;
     while ( (n = ::read(fd, read_buf, sizeof(read_buf))) > 0) {
         // callback for recv
-        std::cout << "fd: " << fd <<  " recv: " << read_buf << std::endl;
+        MUX_DEBUG("recv_size:{0} from fd:{1}", n, fd);
         std::string msg(read_buf, n);
         SocketDataPtr data = std::make_shared<SocketData>(fd, msg);
         if (recv_callback_) {
             recv_callback_(data);
+        } else {
+            MUX_WARN("no recv callback reigistered!");
         }
     }
     if (n == -1) {
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
             // read finished
+            MUX_DEBUG("read finished in fd:{0}", fd);
             return;
         }
         // something goes wrong for this fd, should close it
         ::close(fd);
+        MUX_ERROR("something goes wrong, will close this fd:{0}.", fd);
         return;
     }
     if (n == 0) {
         // this may happen when client close socket. EPOLLRDHUP usually handle this, but just make sure; should close this fd
         ::close(fd);
+        MUX_ERROR("peer maybe closed, will close this fd:{0}.", fd);
         return;
     }
 }
 
 // handle write events on fd (usually happens when sending big files)
 void EpollTcpServer::OnSocketWrite(int32_t fd) {
-    std::cout << "fd: " << fd << " writeable!" << std::endl;
+    MUX_DEBUG("fd:{0} writeabled!", fd);
 }
 
 int32_t EpollTcpServer::SendData(const SocketDataPtr& data) {
     if (data->fd_ <= 0) {
+        MUX_WARN("send failed, fd:{0} invalid", data->fd_);
         return -1;
     }
     int r = ::write(data->fd_, data->msg_.data(), data->msg_.size());
     if (r == -1) {
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            MUX_INFO("send {0} bytes finished", data->msg_.size());
             return -1;
         }
         // error happend
         ::close(data->fd_);
-        std::cout << "fd: " << data->fd_ << " write error, close it!" << std::endl;
+        MUX_ERROR("write error, will close this fd:{0}", data->fd_);
         return -1;
     }
-    std::cout << "fd: " << data->fd_ << " write size: " << r << " ok!" << std::endl;
+    MUX_DEBUG("write size:{0} in fd:{1} ok", r, data->fd_);
     return r;
 }
 
 void EpollTcpServer::EpollLoop() {
     struct epoll_event* alive_events =  static_cast<epoll_event*>(calloc(kMaxEvents, sizeof(epoll_event)));
     if (!alive_events) {
-        std::cout << "calloc memory failed for epoll_events!" << std::endl;
+        MUX_ERROR("calloc memory failed for epoll_events");
         return;
     }
     while (loop_flag_) {
@@ -265,13 +275,13 @@ void EpollTcpServer::EpollLoop() {
             int events = alive_events[i].events;
 
             if ( (events & EPOLLERR) || (events & EPOLLHUP) ) {
-                std::cout << "epoll_wait error!" << std::endl;
+                MUX_ERROR("epoll_wait error, will close fd:{0}", fd);
                 // An error has occured on this fd, or the socket is not ready for reading (why were we notified then?).
                 ::close(fd);
             } else  if (events & EPOLLRDHUP) {
                 // Stream socket peer closed connection, or shut down writing half of connection.
                 // more inportant, We still to handle disconnection when read()/recv() return 0 or -1 just to be sure.
-                std::cout << "fd:" << fd << " closed vis EPOLLRDHUP!" << std::endl;
+                MUX_WARN("peer maybe closed, will close this fd:{0}", fd);
                 // close fd and epoll will remove it
                 ::close(fd);
             } else if ( events & EPOLLIN ) {
@@ -286,7 +296,7 @@ void EpollTcpServer::EpollLoop() {
                 // write event for fd (not including listen-fd), meaning send buffer is available for big files
                 OnSocketWrite(fd);
             } else {
-                std::cout << "unknow epoll event!" << std::endl;
+                MUX_WARN("unknow epoll event");
             }
         } // end for (int i = 0; ...
 

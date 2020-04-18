@@ -6,6 +6,7 @@
 
 #include "epoll/epoll_tcp_server.h"
 #include "epoll/epoll_tcp_client.h"
+#include "mbase/mux_log.h"
 
 
 
@@ -37,10 +38,11 @@ TcpTransport::~TcpTransport() {
 
 bool TcpTransport::Start() {
     if (ip_.empty() || port_ == 0) {
-        std::cout << "invalid ip: " << ip_ << " port: " << port_ << std::endl;
+        MUX_ERROR("invalid ip:{0} or port:{1}", ip_, port_);
         return false;
     }
     if (!sock_) {
+        MUX_ERROR("sock_ invalid");
         return false;
     }
 
@@ -52,6 +54,7 @@ bool TcpTransport::Stop() {
         sock_->Stop();
         sock_ = nullptr;
     }
+    MUX_INFO("TcpTransport Stop");
     return true;
 }
 

@@ -13,8 +13,9 @@ using namespace mux;
 int main(int argc, char* argv[]) {
     spdlog::set_level(spdlog::level::debug); // Set global log level to debug
     // Set the default logger to file logger
-    auto file_logger = spdlog::basic_logger_mt("basic_logger", "log/mux.log");
+    auto file_logger = spdlog::basic_logger_mt("basic_logger", "log/client.log");
     spdlog::set_default_logger(file_logger);
+    file_logger->flush_on(spdlog::level::warn);
 
     MUX_DEBUG("log init");
 
@@ -24,12 +25,15 @@ int main(int argc, char* argv[]) {
     transport::TcpTransportPtr tcp_client = std::make_shared<transport::TcpTransport>(server_ip, server_port, is_server);
     if (!tcp_client) {
         std::cout << "tcp_client create faield!" << std::endl;
+        MUX_ERROR("tcp_client create failed");
         exit(-1);
     }
 
 
     auto recv_call = [](const transport::SocketDataPtr& data) -> void {
+        ::write(1, "\nrecv:", 6);
         ::write(1, data->msg_.data(), data->msg_.size());
+        ::write(1, "\n", 1);
         return;
     };
 
@@ -37,9 +41,11 @@ int main(int argc, char* argv[]) {
 
     if (!tcp_client->Start()) {
         std::cout << "tcp_client start failed!" << std::endl;
+        MUX_ERROR("tcp_client start failed!");
         exit(1);
     }
     std::cout << "############tcp_client started!################\n" << std::endl;
+    MUX_INFO("############tcp_client started!################");
 
     /*
     uint32_t send_total = 1000000;
@@ -54,9 +60,10 @@ int main(int argc, char* argv[]) {
     */
 
     while (true) {
-        std::cout << std::endl << " input:";
+        std::cout << std::endl<<  "input:";
         auto data = std::make_shared<transport::SocketData>();
         std::getline(std::cin, data->msg_);
+        MUX_DEBUG("send {0}", data->msg_);
         tcp_client->SendData(data);
         //std::this_thread::sleep_for(std::chrono::seconds(1));
     }
