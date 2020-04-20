@@ -24,6 +24,7 @@ abs_libs = []
 for lib in libs:
     abs_libs.append("%s/%s" % (abs_path,lib))
 
+CCFLAGS = '-ggdb -std=c++11'
 
 print "headers and libs"
 print abs_headers
@@ -32,6 +33,7 @@ print abs_libs
 env["headers"] = abs_headers
 env["libs"]    = abs_libs
 env["MUX_DIR"] = abs_path 
+env['ccflags'] = CCFLAGS
 
 Export('env')
 

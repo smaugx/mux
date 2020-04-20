@@ -5,7 +5,7 @@ import os
 import sys
 
 Import('env')
-env =  env.Clone()
+#env =  env.Clone()
 
 epoll_server = ['echo_server.cc', '../../transport/tcp_transport.cc', '../../epoll/epoll_tcp_client.cc', '../../epoll/epoll_tcp_server.cc']
 epoll_client = ['client.cc', '../../transport/tcp_transport.cc', '../../epoll/epoll_tcp_client.cc', '../../epoll/epoll_tcp_server.cc']
@@ -18,7 +18,7 @@ env.Program(target = os.path.join(bin_dir, "echo_server"),
         CPPPATH = env['headers'],
         LIBPATH = env['libs'],
         LIBS    = ['pthread'],
-        CCFLAGS = '-ggdb -std=c++11'
+        CCFLAGS = env['ccflags']
         )
 
 
@@ -27,5 +27,5 @@ env.Program(target = os.path.join(bin_dir, "echo_client"),
         CPPPATH = env['headers'],
         LIBPATH = env['libs'],
         LIBS    = ['pthread'],
-        CCFLAGS = '-ggdb -std=c++11'
+        CCFLAGS = env['ccflags']
         )
