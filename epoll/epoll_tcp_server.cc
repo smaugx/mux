@@ -175,6 +175,8 @@ void EpollTcpServer::OnSocketAccept() {
             continue;
         }
         MUX_DEBUG("accept connection from {0}", inet_ntoa(in_addr.sin_addr));
+        fprintf(stdout, "accept connection from %s:%u\n", inet_ntoa(in_addr.sin_addr), in_addr.sin_port);
+        fflush(stdout);
         int mr = MakeSocketNonBlock(cli_fd);
         if (mr < 0) {
             ::close(cli_fd);

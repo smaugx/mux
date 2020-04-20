@@ -22,7 +22,7 @@ env.Program(target = os.path.join(bin_dir, "echo_server"),
         )
 
 
-env.Program(target = os.path.join(bin_dir, "client"),
+env.Program(target = os.path.join(bin_dir, "echo_client"),
         source  = epoll_client,
         CPPPATH = env['headers'],
         LIBPATH = env['libs'],

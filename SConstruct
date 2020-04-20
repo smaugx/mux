@@ -37,3 +37,4 @@ Export('env')
 
 
 SConscript(['./demo/echo/SConscript'])
+SConscript(['./demo/bench/SConscript'])

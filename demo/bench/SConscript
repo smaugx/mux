@@ -1,0 +1,31 @@
+#!/usr/bin/env python
+#-*- coding:utf-8 -*-
+
+import os
+import sys
+
+Import('env')
+env =  env.Clone()
+
+epoll_server = ['bench_server.cc', '../../transport/tcp_transport.cc', '../../epoll/epoll_tcp_client.cc', '../../epoll/epoll_tcp_server.cc']
+epoll_client = ['client.cc', '../../transport/tcp_transport.cc', '../../epoll/epoll_tcp_client.cc', '../../epoll/epoll_tcp_server.cc']
+
+project_dir  = env['MUX_DIR']
+bin_dir = os.path.join(project_dir, "sbuild/bin")
+
+env.Program(target = os.path.join(bin_dir, "bench_server"),
+        source  = epoll_server,
+        CPPPATH = env['headers'],
+        LIBPATH = env['libs'],
+        LIBS    = ['pthread'],
+        CCFLAGS = '-ggdb -std=c++11'
+        )
+
+
+env.Program(target = os.path.join(bin_dir, "bench_client"),
+        source  = epoll_client,
+        CPPPATH = env['headers'],
+        LIBPATH = env['libs'],
+        LIBS    = ['pthread'],
+        CCFLAGS = '-ggdb -std=c++11'
+        )
