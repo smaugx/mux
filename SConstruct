@@ -9,7 +9,7 @@ import re
 
 env = Environment()
 abs_path = os.getcwd()
-print('current path:{0}'.format(abs_path))
+print('workspace path:{0}'.format(abs_path))
 
 headers = ['.', 'transport', 'epoll', 'mbase', 'third-party/include', 'message_handle']
 libs = ['./third-party/lib']
@@ -28,17 +28,26 @@ for item in libs:
 
 CCFLAGS = '-ggdb -std=c++11'
 
-print "headers and libs"
-print abs_headers
-print abs_libs
+print('\nheaders path:')
+print(abs_headers)
+print('\n')
+
+print('libs path:')
+print(abs_libs)
+print('\n')
+
+print("begin load SConscript")
 
 env["headers"] = abs_headers
 env["libs"]    = abs_libs
 env["MUX_DIR"] = abs_path 
 env['ccflags'] = CCFLAGS
+env['sbuild'] = os.path.join(abs_path, 'sbuild')
 
 Export('env')
 
 
 SConscript(['./demo/echo/SConscript'])
 SConscript(['./demo/bench/SConscript'])
+
+print("\n All Done, Please Check {0}".format(env['sbuild']))

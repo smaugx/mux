@@ -7,6 +7,9 @@ import sys
 Import('env')
 #env =  env.Clone()
 
+echo_server_bin = 'echo_server'
+client_bin = 'echo_client'
+
 echo_server_sources = ['echo_server.cc']
 client_sources = ['client.cc']
 
@@ -32,12 +35,14 @@ echo_server_sources.extend(transport_sources)
 client_sources.extend(transport_sources)
 
 
+print('\nbuild target:{0}'.format(echo_server_bin))
 print(echo_server_sources)
+print('\nbuild target:{0}'.format(client_bin))
 print(client_sources)
 
-bin_dir = os.path.join(project_dir, "sbuild/bin")
+bin_dir = os.path.join(env['sbuild'], 'bin')
 
-env.Program(target = os.path.join(bin_dir, "echo_server"),
+env.Program(target = os.path.join(bin_dir, echo_server_bin),
         source  = echo_server_sources,
         CPPPATH = env['headers'],
         LIBPATH = env['libs'],
@@ -46,7 +51,7 @@ env.Program(target = os.path.join(bin_dir, "echo_server"),
         )
 
 
-env.Program(target = os.path.join(bin_dir, "echo_client"),
+env.Program(target = os.path.join(bin_dir, client_bin),
         source  = client_sources,
         CPPPATH = env['headers'],
         LIBPATH = env['libs'],

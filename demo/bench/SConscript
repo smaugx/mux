@@ -7,6 +7,9 @@ import sys
 Import('env')
 #env =  env.Clone()
 
+bench_server_bin = 'bench_server'
+bench_client_bin = 'bench_client'
+
 bench_server_sources = ['bench_server.cc']
 client_sources = ['client.cc']
 
@@ -31,12 +34,15 @@ bench_server_sources.extend(transport_sources)
 client_sources.extend(transport_sources)
 
 
+
+print('\nbuild target:{0}'.format(bench_server_bin))
 print(bench_server_sources)
+print('\nbuild target:{0}'.format(bench_client_bin))
 print(client_sources)
 
-bin_dir = os.path.join(project_dir, "sbuild/bin")
+bin_dir = os.path.join(env['sbuild'], 'bin')
 
-env.Program(target = os.path.join(bin_dir, "bench_server"),
+env.Program(target = os.path.join(bin_dir, bench_server_bin),
         source  = bench_server_sources,
         CPPPATH = env['headers'],
         LIBPATH = env['libs'],
@@ -45,7 +51,7 @@ env.Program(target = os.path.join(bin_dir, "bench_server"),
         )
 
 
-env.Program(target = os.path.join(bin_dir, "bench_client"),
+env.Program(target = os.path.join(bin_dir, bench_client_bin),
         source  = client_sources,
         CPPPATH = env['headers'],
         LIBPATH = env['libs'],
