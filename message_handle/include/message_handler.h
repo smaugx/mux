@@ -11,11 +11,15 @@
 #include <condition_variable>
 #include <queue>
 
+#include "mbase/packet.h"
+
 namespace mux {
 
 namespace transport {
 
-using OnDispatchCallback = std::function<void(transport::SocketDataPtr&)>;
+static const uint32_t kMaxConsumer = 4;
+
+using OnDispatchCallback = std::function<void(transport::PacketPtr&)>;
 
 class ThreadConsuemr;
 class MessageHandler;
@@ -46,7 +50,7 @@ private:
     std::mutex& mutex_;
     std::condition_variable& cond_var_;
     bool destroy_ {false};
-    std::shared_ptr<std::thread> message_handle_thread_ {nullptr};
+    std::shared_ptr<std::thread> loop_thread_ {nullptr};
     std::mutex callback_mutex_;
     OnDispatchCallback callback_;
 };
@@ -65,9 +69,8 @@ public:
     ~MessageHandler();
 
 public:
-    bool Init();
-    void HandleMessage(SocketDataPtr& msg);
-    SocketDataPtr GetMessageFromQueue();
+    void HandleMessage(PacketPtr& msg);
+    PacketPtr GetMessageFromQueue();
     void RegisterOnDispatchCallback(OnDispatchCallback callback);
     void UnRegisterOnDispatchCallback();
 
@@ -76,12 +79,10 @@ private:
 
 private:
     std::mutex priority_queue_map_mutex_;
-    std::map<uint32_t, std::queue<SocketDataPtr>> priority_queue_map_;
+    std::map<uint32_t, std::queue<PacketPtr>> priority_queue_map_;
     std::mutex mutex_;
     std::condition_variable cond_var_;
     std::vector<ThreadConsumerPtr> consumer_vec_;
-    std::mutex inited_mutex_;
-    bool inited_ {false};
 };
 
 }  // namespace transport
