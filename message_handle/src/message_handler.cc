@@ -116,6 +116,50 @@ PacketPtr MessageHandler::GetMessageFromQueue() {
     return nullptr;
 }
 
+void MessageHandler::RegisterOnDispatchCallback(OnDispatchCallback callback) {
+    assert(callback);
+    for (auto& consumer : consumer_vec_) {
+        consumer->RegisterOnDispatchCallback(callback);
+    }
+}
+
+
+void MessageHandler::UnRegisterOnDispatchCallback() {
+    for (auto& consumer : consumer_vec_) {
+        consumer->UnRegisterOnDispatchCallback();
+    }
+}
+
+void MessageHandler::Join() {
+    for (auto& consumer : consumer_vec_) {
+        consumer->Join();
+    }
+    consumer_vec_.clear();
+}
+
+void MessageHandler::HandleMessage(PacketPtr& packet) {
+    if (consumer_vec_.empty()) {
+        MUX_WARN("no consumer, handlemessage error");
+        return;
+    }
+    {
+        std::unique_lock<std::mutex> lock(priority_queue_map_mutex_);
+    }
+    uint32_t packet_priority = kMaxPacketPriority; // the lowest priority
+    if (packet->priority_ < kMaxPacketPriority) {
+        packet_priority = packet->priority_;
+    }
+
+    priority_queue_map_[packet_priority].push(packet);
+
+    /*
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        cond_var_.notify_one();
+    }
+    */
+}
+
 
 }
 

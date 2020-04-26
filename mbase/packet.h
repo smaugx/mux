@@ -3,6 +3,8 @@
 #include <string>
 #include <memory>
 
+#include "mbase/mux_utils.h"
+
 namespace mux {
 
 namespace transport {
@@ -17,6 +19,7 @@ public:
           msg_ { msg } {}
 
     int32_t fd_ { -1 };
+    uint32_t priority_ {kMaxPacketPriority}; // default is the lowest priority
     std::string msg_;
 } Packet;
 

@@ -3,13 +3,8 @@
 namespace mux {
 
 
-enum PacketPriority {
-    // the larger priority_num , the lower priority
-    kHighPriority = 0,
-    kMiddlePriority,
-    kLowPriority,
-};
-
+// the larger priority_num , the lower priority
+// 0 is highest priority
 static const uint32_t kMaxPacketPriority = 3;
 
 }
