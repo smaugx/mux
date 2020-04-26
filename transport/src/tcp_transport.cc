@@ -1,11 +1,11 @@
-#include "transport/tcp_transport.h"
+#include "transport/include/tcp_transport.h"
 
 #include <cassert>
 
 #include <iostream>
 
-#include "epoll/epoll_tcp_server.h"
-#include "epoll/epoll_tcp_client.h"
+#include "epoll/include/epoll_tcp_server.h"
+#include "epoll/include/epoll_tcp_client.h"
 #include "mbase/mux_log.h"
 
 
@@ -58,13 +58,13 @@ bool TcpTransport::Stop() {
     return true;
 }
 
-int32_t TcpTransport::SendData(const SocketDataPtr& data) {
-    return sock_->SendData(data);
+int32_t TcpTransport::SendData(const PacketPtr& packet) {
+    return sock_->SendData(packet);
 }
 
 int32_t TcpTransport::SendData(int32_t fd, const std::string& msg) {
-    auto data = std::make_shared<SocketData>(fd, msg);
-    return sock_->SendData(data);
+    auto packet = std::make_shared<Packet>(fd, msg);
+    return sock_->SendData(packet);
 }
 
 void TcpTransport::RegisterOnRecvCallback(callback_recv_t callback) {

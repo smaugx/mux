@@ -11,11 +11,13 @@ namespace transport {
 
 typedef struct Packet {
 public:
-    Packet()
-        : fd_ { -1 },
-          msg_ { "" } {}
+    Packet() {}
     Packet(int32_t fd, const std::string& msg)
         : fd_ { fd },
+          msg_ { msg } {}
+    Packet(int32_t fd, uint32_t priority, const std::string& msg)
+        : fd_ { fd },
+          priority_ {priority},
           msg_ { msg } {}
 
     int32_t fd_ { -1 };

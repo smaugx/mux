@@ -5,7 +5,7 @@
 #include <string>
 #include <iostream>
 
-#include "transport/tcp_transport.h"
+#include "transport/include/tcp_transport.h"
 #include "mbase/mux_log.h"
 
 using namespace mux;
@@ -30,9 +30,9 @@ int main(int argc, char* argv[]) {
     }
 
 
-    auto recv_call = [](const transport::SocketDataPtr& data) -> void {
+    auto recv_call = [](const transport::PacketPtr& packet) -> void {
         ::write(1, "\nrecv:", 6);
-        ::write(1, data->msg_.data(), data->msg_.size());
+        ::write(1, packet->msg_.data(), packet->msg_.size());
         ::write(1, "\n", 1);
         return;
     };
@@ -61,10 +61,10 @@ int main(int argc, char* argv[]) {
 
     while (true) {
         std::cout << std::endl<<  "input:";
-        auto data = std::make_shared<transport::SocketData>();
-        std::getline(std::cin, data->msg_);
-        MUX_DEBUG("send {0}", data->msg_);
-        tcp_client->SendData(data);
+        auto packet = std::make_shared<transport::Packet>();
+        std::getline(std::cin, packet->msg_);
+        MUX_DEBUG("send {0}", packet->msg_);
+        tcp_client->SendData(packet);
         //std::this_thread::sleep_for(std::chrono::seconds(1));
     }
 

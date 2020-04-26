@@ -1,4 +1,4 @@
-#include "epoll/epoll_tcp_server.h"
+#include "epoll/include/epoll_tcp_server.h"
 
 #include <arpa/inet.h>
 #include <errno.h>
@@ -251,7 +251,7 @@ int32_t EpollTcpServer::SendData(const PacketPtr& packet) {
     int r = ::write(packet->fd_, packet->msg_.data(), packet->msg_.size());
     if (r == -1) {
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
-            MUX_INFO("send {0} bytes finished", data->msg_.size());
+            MUX_INFO("send {0} bytes finished", packet->msg_.size());
             return -1;
         }
         // error happend

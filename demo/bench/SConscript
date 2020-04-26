@@ -7,14 +7,37 @@ import sys
 Import('env')
 #env =  env.Clone()
 
-epoll_server = ['bench_server.cc', '../../transport/tcp_transport.cc', '../../epoll/epoll_tcp_client.cc', '../../epoll/epoll_tcp_server.cc']
-epoll_client = ['client.cc', '../../transport/tcp_transport.cc', '../../epoll/epoll_tcp_client.cc', '../../epoll/epoll_tcp_server.cc']
+bench_server_sources = ['bench_server.cc']
+client_sources = ['client.cc']
 
 project_dir  = env['MUX_DIR']
+
+epoll_src_path = os.path.join(project_dir, 'epoll/src')
+epoll_sources = []
+for item in os.listdir(epoll_src_path):
+    if item.endswith('.cc') or item.endswith('.cpp') or item.endswith('.cxx'):
+        abs_item = os.path.join(epoll_src_path, item)
+        epoll_sources.append(abs_item)
+bench_server_sources.extend(epoll_sources)
+client_sources.extend(epoll_sources)
+
+transport_src_path = os.path.join(project_dir, 'transport/src')
+transport_sources = []
+for item in os.listdir(transport_src_path):
+    if item.endswith('.cc') or item.endswith('.cpp') or item.endswith('.cxx'):
+        abs_item = os.path.join(transport_src_path, item)
+        transport_sources.append(abs_item)
+bench_server_sources.extend(transport_sources)
+client_sources.extend(transport_sources)
+
+
+print(bench_server_sources)
+print(client_sources)
+
 bin_dir = os.path.join(project_dir, "sbuild/bin")
 
 env.Program(target = os.path.join(bin_dir, "bench_server"),
-        source  = epoll_server,
+        source  = bench_server_sources,
         CPPPATH = env['headers'],
         LIBPATH = env['libs'],
         LIBS    = ['pthread'],
@@ -23,7 +46,7 @@ env.Program(target = os.path.join(bin_dir, "bench_server"),
 
 
 env.Program(target = os.path.join(bin_dir, "bench_client"),
-        source  = epoll_client,
+        source  = client_sources,
         CPPPATH = env['headers'],
         LIBPATH = env['libs'],
         LIBS    = ['pthread'],

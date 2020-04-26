@@ -6,7 +6,8 @@
 #include <iostream>
 #include <atomic>
 
-#include "transport/tcp_transport.h"
+#include "transport/include/tcp_transport.h"
+#include "mbase/packet.h"
 #include "mbase/mux_log.h"
 
 using namespace mux;
@@ -32,10 +33,10 @@ int main(int argc, char* argv[]) {
 
 
     std::atomic<uint32_t> recv_num {0};
-    auto recv_call = [&](const transport::SocketDataPtr& data) -> void {
+    auto recv_call = [&](const transport::PacketPtr& packet) -> void {
         /*
         ::write(1, "\nrecv:", 6);
-        ::write(1, data->msg_.data(), data->msg_.size());
+        ::write(1, packet->msg_.data(), packet->msg_.size());
         ::write(1, "\n", 1);
         */
         recv_num += 1;
@@ -56,11 +57,11 @@ int main(int argc, char* argv[]) {
     uint32_t send_total = 1000000;
     auto start = std::chrono::system_clock::now();
     std::string msg('b', 200);
-    auto data = std::make_shared<transport::SocketData>();
-    data->msg_ = msg;
+    auto packet = std::make_shared<transport::Packet>();
+    packet->msg_ = msg;
     //for (uint32_t i = 0; i < send_total; ++i) {
     while (true) {
-        tcp_client->SendData(data);
+        tcp_client->SendData(packet);
         //std::this_thread::sleep_for(std::chrono::microseconds(1)); // ms
     }
     auto end = std::chrono::system_clock::now();

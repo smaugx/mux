@@ -7,22 +7,24 @@ import os
 import platform
 import re
 
-
 env = Environment()
 abs_path = os.getcwd()
-print abs_path
+print('current path:{0}'.format(abs_path))
 
-headers = ['.','./third-party/include']
-
+headers = ['.', 'transport', 'epoll', 'mbase', 'third-party/include', 'message_handle']
 libs = ['./third-party/lib']
 
 abs_headers = []
-for header in headers:
-    abs_headers.append("%s/%s" % (abs_path,header))
-
 abs_libs = []
-for lib in libs:
-    abs_libs.append("%s/%s" % (abs_path,lib))
+
+for item in headers:
+    abs_item = os.path.join(abs_path, item)
+    abs_headers.append(abs_item)
+
+
+for item in libs:
+    abs_item = os.path.join(abs_path, item)
+    abs_libs.append(abs_item)
 
 CCFLAGS = '-ggdb -std=c++11'
 

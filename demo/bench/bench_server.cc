@@ -3,7 +3,8 @@
 #include <string>
 #include <iostream>
 
-#include "transport/tcp_transport.h"
+#include "transport/include/tcp_transport.h"
+#include "mbase/packet.h"
 #include "mbase/mux_log.h"
 
 using namespace mux;
@@ -29,8 +30,8 @@ int main(int argc, char* argv[]) {
     }
 
     std::atomic<uint32_t> recv_num {0};
-    auto recv_call = [&](const transport::SocketDataPtr& data) -> void {
-        //tcp_bench_server->SendData(data);
+    auto recv_call = [&](const transport::PacketPtr& packet) -> void {
+        //tcp_bench_server->SendData(packet);
         recv_num += 1;
         return;
     };

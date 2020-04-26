@@ -3,8 +3,8 @@
 #include <string>
 #include <memory>
 
-#include "transport/transport.h"
-#include "epoll/epoll_tcp_server.h"
+#include "transport/include/transport.h"
+#include "epoll/include/epoll_tcp_server.h"
 
 
 namespace mux {
@@ -29,7 +29,7 @@ public:
     void RegisterOnRecvCallback(callback_recv_t callback);
     void UnRegisterOnRecvCallback();
 
-    int32_t SendData(const SocketDataPtr& data);
+    int32_t SendData(const PacketPtr& packet);
     int32_t SendData(int32_t fd, const std::string& msg);
 
 private:
