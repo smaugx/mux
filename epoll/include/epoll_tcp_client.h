@@ -24,7 +24,7 @@ public:
 public:
     bool Start() override;
     bool Stop() override;
-    int32_t SendData(const SocketDataPtr& data) override;
+    int32_t SendData(const PacketPtr& packet) override;
     void RegisterOnRecvCallback(callback_recv_t callback) override;
     void UnRegisterOnRecvCallback() override;
 

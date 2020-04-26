@@ -212,9 +212,9 @@ void EpollTcpServer::OnSocketRead(int32_t fd) {
         // callback for recv
         MUX_DEBUG("recv_size:{0} from fd:{1}", n, fd);
         std::string msg(read_buf, n);
-        SocketDataPtr data = std::make_shared<SocketData>(fd, msg);
+        PacketPtr packet = std::make_shared<Packet>(fd, msg);
         if (recv_callback_) {
-            recv_callback_(data);
+            recv_callback_(packet);
         } else {
             MUX_WARN("no recv callback reigistered!");
         }
@@ -243,23 +243,23 @@ void EpollTcpServer::OnSocketWrite(int32_t fd) {
     MUX_DEBUG("fd:{0} writeabled!", fd);
 }
 
-int32_t EpollTcpServer::SendData(const SocketDataPtr& data) {
-    if (data->fd_ <= 0) {
-        MUX_WARN("send failed, fd:{0} invalid", data->fd_);
+int32_t EpollTcpServer::SendData(const PacketPtr& packet) {
+    if (packet->fd_ <= 0) {
+        MUX_WARN("send failed, fd:{0} invalid", packet->fd_);
         return -1;
     }
-    int r = ::write(data->fd_, data->msg_.data(), data->msg_.size());
+    int r = ::write(packet->fd_, packet->msg_.data(), packet->msg_.size());
     if (r == -1) {
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
             MUX_INFO("send {0} bytes finished", data->msg_.size());
             return -1;
         }
         // error happend
-        ::close(data->fd_);
-        MUX_ERROR("write error, will close this fd:{0}", data->fd_);
+        ::close(packet->fd_);
+        MUX_ERROR("write error, will close this fd:{0}", packet->fd_);
         return -1;
     }
-    MUX_DEBUG("write size:{0} in fd:{1} ok", r, data->fd_);
+    MUX_DEBUG("write size:{0} in fd:{1} ok", r, packet->fd_);
     return r;
 }
 

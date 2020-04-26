@@ -2,13 +2,13 @@
 
 #include <thread>
 
-#include "epoll/socket_data.h"
+#include "mbase/packet.h"
 
 namespace mux {
 
 namespace transport {
 
-using callback_recv_t = std::function<void(const SocketDataPtr& data)>;
+using callback_recv_t = std::function<void(const PacketPtr& data)>;
 
 class EpollTcpBase {
 public:
@@ -22,7 +22,7 @@ public:
 public:
     virtual bool Start() = 0;
     virtual bool Stop()  = 0;
-    virtual int32_t SendData(const SocketDataPtr& data) = 0;
+    virtual int32_t SendData(const PacketPtr& data) = 0;
     virtual void RegisterOnRecvCallback(callback_recv_t callback) = 0;
     virtual void UnRegisterOnRecvCallback() = 0;
 };

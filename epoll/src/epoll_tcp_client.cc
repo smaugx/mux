@@ -147,9 +147,9 @@ void EpollTcpClient::OnSocketRead(int32_t fd) {
         // callback for recv
         MUX_DEBUG("recv_size:{0} from fd:{1}", n, fd);
         std::string msg(read_buf, n);
-        SocketDataPtr data = std::make_shared<SocketData>(fd, msg);
+        PacketPtr packet = std::make_shared<Packet>(fd, msg);
         if (recv_callback_) {
-            recv_callback_(data);
+            recv_callback_(packet);
         } else {
             MUX_WARN("no recv callback reigistered!");
         }
@@ -178,8 +178,8 @@ void EpollTcpClient::OnSocketWrite(int32_t fd) {
     MUX_DEBUG("fd:{0} writeabled!", fd);
 }
 
-int32_t EpollTcpClient::SendData(const SocketDataPtr& data) {
-    int32_t fd = data->fd_;
+int32_t EpollTcpClient::SendData(const PacketPtr& packet) {
+    int32_t fd = packet->fd_;
     if (fd <= 0) {
         fd = handle_; // specially for client
     }
@@ -187,10 +187,10 @@ int32_t EpollTcpClient::SendData(const SocketDataPtr& data) {
         MUX_WARN("send failed, fd:{0} invalid", fd);
         return -1;
     }
-    int r = ::write(fd, data->msg_.data(), data->msg_.size());
+    int r = ::write(fd, packet->msg_.data(), packet->msg_.size());
     if (r == -1) {
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
-            MUX_INFO("send {0} bytes finished", data->msg_.size());
+            MUX_INFO("send {0} bytes finished", packet->msg_.size());
             return -1;
         }
         // error happend

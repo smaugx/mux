@@ -7,20 +7,20 @@ namespace mux {
 
 namespace transport {
 
-typedef struct SocketData {
+typedef struct Packet {
 public:
-    SocketData()
+    Packet()
         : fd_ { -1 },
           msg_ { "" } {}
-    SocketData(int32_t fd, const std::string& msg)
+    Packet(int32_t fd, const std::string& msg)
         : fd_ { fd },
           msg_ { msg } {}
 
     int32_t fd_ { -1 };
     std::string msg_;
-} SocketData;
+} Packet;
 
-typedef std::shared_ptr<SocketData> SocketDataPtr;
+typedef std::shared_ptr<Packet> PacketPtr;
 
 }
 
