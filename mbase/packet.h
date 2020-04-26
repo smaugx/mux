@@ -27,6 +27,8 @@ public:
 
 typedef std::shared_ptr<Packet> PacketPtr;
 
+using callback_recv_t = std::function<void(transport::PacketPtr&)>;
+
 }
 
 }

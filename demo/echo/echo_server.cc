@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "transport/include/tcp_transport.h"
+#include "message_handle/include/message_handler.h"
 #include "mbase/mux_log.h"
 
 using namespace mux;
@@ -33,7 +34,12 @@ int main(int argc, char* argv[]) {
         return;
     };
 
-    tcp_echo_server->RegisterOnRecvCallback(recv_call);
+    std::shared_ptr<transport::MessageHandler> msg_handle = std::make_shared<transport::MessageHandler>();
+    msg_handle->RegisterOnDispatchCallback(recv_call);
+    auto dispath_call = [&](transport::PacketPtr& packet) -> void {
+        return msg_handle->HandleMessage(packet);
+    };
+    tcp_echo_server->RegisterOnRecvCallback(dispath_call);
 
     if (!tcp_echo_server->Start()) {
         MUX_ERROR("tcp_echo_server start failed!");

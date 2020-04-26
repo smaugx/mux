@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "transport/include/tcp_transport.h"
+#include "message_handle/include/message_handler.h"
 #include "mbase/packet.h"
 #include "mbase/mux_log.h"
 
@@ -36,7 +37,12 @@ int main(int argc, char* argv[]) {
         return;
     };
 
-    tcp_bench_server->RegisterOnRecvCallback(recv_call);
+   std::shared_ptr<transport::MessageHandler> msg_handle = std::make_shared<transport::MessageHandler>();
+    msg_handle->RegisterOnDispatchCallback(recv_call);
+    auto dispath_call = [&](transport::PacketPtr& packet) -> void {
+        return msg_handle->HandleMessage(packet);
+    };
+    tcp_bench_server->RegisterOnRecvCallback(dispath_call);
 
     if (!tcp_bench_server->Start()) {
         MUX_ERROR("tcp_bench_server start failed!");

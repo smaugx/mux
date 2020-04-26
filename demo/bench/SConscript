@@ -33,6 +33,15 @@ for item in os.listdir(transport_src_path):
 bench_server_sources.extend(transport_sources)
 client_sources.extend(transport_sources)
 
+message_handle_src_path = os.path.join(project_dir, 'message_handle/src')
+message_handle_sources = []
+for item in os.listdir(message_handle_src_path):
+    if item.endswith('.cc') or item.endswith('.cpp') or item.endswith('.cxx'):
+        abs_item = os.path.join(message_handle_src_path, item)
+        message_handle_sources.append(abs_item)
+bench_server_sources.extend(message_handle_sources)
+client_sources.extend(message_handle_sources)
+
 
 
 print('\nbuild target:{0}'.format(bench_server_bin))

@@ -1,4 +1,4 @@
-#include "message_hande/message_hander.h"
+#include "message_handle/include/message_handler.h"
 
 #include "mbase/packet.h"
 #include "mbase/mux_log.h"
@@ -12,9 +12,9 @@ ThreadConsumer::ThreadConsumer(
         std::shared_ptr<MessageHandler> message_handler,
         std::mutex& mutex,
         std::condition_variable& cond_var)
-    : message_handler_ { message_handler },
-      mutex_ {mutex},
-      cond_var_ {cond_var_} {
+    : message_handler_ (message_handler ),
+      mutex_ (mutex),
+      cond_var_ (cond_var) {
     loop_thread_.reset(new std::thread(&ThreadConsumer::LoopHandleMessage, this));
 }
 
@@ -24,7 +24,7 @@ ThreadConsumer::~ThreadConsumer() {
 }
 
 
-void ThreadConsumer::RegisterOnDispatchCallback(OnDispatchCallback callback) {
+void ThreadConsumer::RegisterOnDispatchCallback(callback_recv_t callback) {
     assert(callback);
     std::unique_lock<std::mutex> lock(callback_mutex_);
     assert(!callback_);
@@ -109,14 +109,14 @@ PacketPtr MessageHandler::GetMessageFromQueue() {
     for (uint32_t i = 0; i < kMaxPacketPriority; ++i) {
         if (!priority_queue_map_[i].empty()) {
             PacketPtr packet = priority_queue_map_[i].front();
-            priority_map_queue_[i].pop();
+            priority_queue_map_[i].pop();
             return packet;
         }
     }
     return nullptr;
 }
 
-void MessageHandler::RegisterOnDispatchCallback(OnDispatchCallback callback) {
+void MessageHandler::RegisterOnDispatchCallback(callback_recv_t callback) {
     assert(callback);
     for (auto& consumer : consumer_vec_) {
         consumer->RegisterOnDispatchCallback(callback);

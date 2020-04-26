@@ -7,6 +7,7 @@
 #include <memory>
 #include <vector>
 #include <thread>
+#include <map>
 #include <mutex>
 #include <condition_variable>
 #include <queue>
@@ -18,8 +19,6 @@ namespace mux {
 namespace transport {
 
 static const uint32_t kMaxConsumer = 4;
-
-using OnDispatchCallback = std::function<void(transport::PacketPtr&)>;
 
 class ThreadConsuemr;
 class MessageHandler;
@@ -39,7 +38,7 @@ public:
 
 public:
     void Join();
-    void RegisterOnDispatchCallback(OnDispatchCallback callback);
+    void RegisterOnDispatchCallback(callback_recv_t callback);
     void UnRegisterOnDispatchCallback();
 
 private:
@@ -52,7 +51,7 @@ private:
     bool destroy_ {false};
     std::shared_ptr<std::thread> loop_thread_ {nullptr};
     std::mutex callback_mutex_;
-    OnDispatchCallback callback_;
+    callback_recv_t callback_;
 };
 
 typedef std::shared_ptr<ThreadConsumer> ThreadConsumerPtr;
@@ -71,7 +70,7 @@ public:
 public:
     void HandleMessage(PacketPtr& msg);
     PacketPtr GetMessageFromQueue();
-    void RegisterOnDispatchCallback(OnDispatchCallback callback);
+    void RegisterOnDispatchCallback(callback_recv_t callback);
     void UnRegisterOnDispatchCallback();
 
 private:
