@@ -51,3 +51,14 @@ Good Luck!
 
 ## use cmake
 
+usually, run this:
+
+```
+mkdir cbuild
+cd cbuild
+cmake ..
+make -j4
+```
+
+then check `cbuild/bin` or `cbuild/lib` dir.
+

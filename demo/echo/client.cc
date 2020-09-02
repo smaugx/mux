@@ -21,6 +21,12 @@ int main(int argc, char* argv[]) {
 
     std::string server_ip {"127.0.0.1"};
     uint16_t server_port { 6666 };
+    if (argc >= 2) {
+        server_ip = std::string(argv[1]);
+    }
+    if (argc >= 3) {
+        server_port = std::atoi(argv[2]);
+    }
     bool is_server = false;
     transport::TcpTransportPtr tcp_client = std::make_shared<transport::TcpTransport>(server_ip, server_port, is_server);
     if (!tcp_client) {

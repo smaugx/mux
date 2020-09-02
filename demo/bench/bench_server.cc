@@ -8,6 +8,10 @@
 #include "mbase/packet.h"
 #include "mbase/mux_log.h"
 
+// nlohmann_json
+#include <nlohmann/json.hpp>
+using json = nlohmann::json;
+
 using namespace mux;
 
 int main(int argc, char* argv[]) {
@@ -19,9 +23,15 @@ int main(int argc, char* argv[]) {
 
     MUX_DEBUG("log init");
 
-
     std::string local_ip {"127.0.0.1"};
     uint16_t local_port { 6666 };
+    if (argc >= 2) {
+        local_ip = std::string(argv[1]);
+    }
+    if (argc >= 3) {
+        local_port = std::atoi(argv[2]);
+    }
+
     bool is_server = true;
     transport::TcpTransportPtr tcp_bench_server = std::make_shared<transport::TcpTransport>(local_ip, local_port, is_server);
     if (!tcp_bench_server) {
