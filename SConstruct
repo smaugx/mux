@@ -24,8 +24,6 @@ for item in headers:
     abs_headers.append(abs_item)
 
 
-#abs_headers.append('.')  # attention: this is import,for build SConscript current dir(sub dir)
-
 for item in libs:
     abs_item = os.path.join(abs_path, item)
     abs_libs.append(abs_item)
@@ -52,10 +50,6 @@ env['ccflags'] = CCFLAGS
 env['build_dir'] = build_dir
 
 Export('env')
-
-
-#SConscript(['./demo/echo/SConscript'])
-#SConscript(['./demo/bench/SConscript'])
 
 SConscript(['./mbase/SConscript'])
 SConscript(['./message_handle/SConscript'])
