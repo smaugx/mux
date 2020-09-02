@@ -3,4 +3,5 @@ main
 .sconsign.dblite
 log
 log/*
-sbuild/bin/*
+cbuild
+sbuild

@@ -60,9 +60,13 @@ int main(int argc, char* argv[]) {
     auto packet = std::make_shared<transport::Packet>();
     packet->msg_ = msg;
     //for (uint32_t i = 0; i < send_total; ++i) {
+    uint32_t send_num = 0;
     while (true) {
+        packet->priority_ = send_num % (mux::kMaxPacketPriority +1);
         tcp_client->SendData(packet);
         //std::this_thread::sleep_for(std::chrono::microseconds(1)); // ms
+
+        send_num += 1;
     }
     auto end = std::chrono::system_clock::now();
     std::chrono::duration<double> diff = end - start;

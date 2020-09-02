@@ -1,0 +1,31 @@
+#!/usr/bin/env python
+#-*- coding:utf-8 -*-
+
+import os
+import sys
+
+Import('env')
+project_dir  = env['MUX_DIR']
+
+mbase_lib  = 'mbase'
+
+
+mbase_src_path = os.path.join(project_dir, 'mbase/src')
+mbase_sources = []
+for item in os.listdir(mbase_src_path):
+    if item.endswith('.cc') or item.endswith('.cpp') or item.endswith('.cxx'):
+        abs_item = os.path.join(mbase_src_path, item)
+        mbase_sources.append(abs_item)
+
+print('\nbuild target:lib{0}.a'.format(mbase_lib))
+print(mbase_sources)
+
+lib_dir = os.path.join(env['build_dir'], 'lib')
+
+env.StaticLibrary(target = os.path.join(lib_dir, mbase_lib),
+        source  = mbase_sources,
+        CPPPATH = env['headers'], # include
+        LIBPATH = env['libs'],    # lib path
+        LIBS    = [],    # link lib
+        CCFLAGS = env['ccflags']
+        )

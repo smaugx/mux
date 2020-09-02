@@ -11,14 +11,9 @@ namespace transport {
 
 typedef struct Packet {
 public:
-    Packet() {}
-    Packet(int32_t fd, const std::string& msg)
-        : fd_ { fd },
-          msg_ { msg } {}
-    Packet(int32_t fd, uint32_t priority, const std::string& msg)
-        : fd_ { fd },
-          priority_ {priority},
-          msg_ { msg } {}
+    Packet();
+    Packet(int32_t fd, const std::string& msg);
+    Packet(int32_t fd, uint32_t priority, const std::string& msg);
 
     int32_t fd_ { -1 };
     uint32_t priority_ {kMaxPacketPriority}; // default is the lowest priority

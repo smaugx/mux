@@ -88,6 +88,14 @@ MessageHandler::MessageHandler()
       mutex_(),
       cond_var_(),
       consumer_vec_() {
+}
+
+MessageHandler::~MessageHandler() {
+    Join();
+    MUX_INFO("MessageHandler stop");
+}
+
+void MessageHandler::Init() {
     for (uint32_t i = 0; i < kMaxConsumer; ++i) {
         consumer_vec_.push_back(std::make_shared<ThreadConsumer>(shared_from_this(), mutex_, cond_var_));
     }
@@ -99,14 +107,9 @@ MessageHandler::MessageHandler()
     MUX_INFO("create {0} priority map_queue", kMaxPacketPriority);
 }
 
-MessageHandler::~MessageHandler() {
-    Join();
-    MUX_INFO("MessageHandler stop");
-}
-
 PacketPtr MessageHandler::GetMessageFromQueue() {
     std::unique_lock<std::mutex> lock(priority_queue_map_mutex_);
-    for (uint32_t i = 0; i < kMaxPacketPriority; ++i) {
+    for (uint32_t i = 0; i < kMaxPacketPriority + 1; ++i) {
         if (!priority_queue_map_[i].empty()) {
             PacketPtr packet = priority_queue_map_[i].front();
             priority_queue_map_[i].pop();
@@ -142,15 +145,23 @@ void MessageHandler::HandleMessage(PacketPtr& packet) {
         MUX_WARN("no consumer, handlemessage error");
         return;
     }
-    {
-        std::unique_lock<std::mutex> lock(priority_queue_map_mutex_);
-    }
     uint32_t packet_priority = kMaxPacketPriority; // the lowest priority
     if (packet->priority_ < kMaxPacketPriority) {
         packet_priority = packet->priority_;
     }
 
-    priority_queue_map_[packet_priority].push(packet);
+    {
+        std::unique_lock<std::mutex> lock(priority_queue_map_mutex_);
+        priority_queue_map_[packet_priority].push(packet);
+#ifdef DEBUG
+        static std::atomic<uint32_t> packet_count(0);
+        ++packet_count;
+        if (packet_count % 100 == 0) {
+            MUX_DEBUG("total_packet_count:{0} hold:{1} priority:{2}", packet_count, priority_queue_map_[packet_priority].size(), packet_priority);
+        }
+#endif
+    }
+
 
     /*
     {

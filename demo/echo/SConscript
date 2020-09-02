@@ -15,46 +15,18 @@ client_sources = ['client.cc']
 
 project_dir  = env['MUX_DIR']
 
-epoll_src_path = os.path.join(project_dir, 'epoll/src')
-epoll_sources = []
-for item in os.listdir(epoll_src_path):
-    if item.endswith('.cc') or item.endswith('.cpp') or item.endswith('.cxx'):
-        abs_item = os.path.join(epoll_src_path, item)
-        epoll_sources.append(abs_item)
-
-echo_server_sources.extend(epoll_sources)
-client_sources.extend(epoll_sources)
-
-transport_src_path = os.path.join(project_dir, 'transport/src')
-transport_sources = []
-for item in os.listdir(transport_src_path):
-    if item.endswith('.cc') or item.endswith('.cpp') or item.endswith('.cxx'):
-        abs_item = os.path.join(transport_src_path, item)
-        transport_sources.append(abs_item)
-echo_server_sources.extend(transport_sources)
-client_sources.extend(transport_sources)
-
-message_handle_src_path = os.path.join(project_dir, 'message_handle/src')
-message_handle_sources = []
-for item in os.listdir(message_handle_src_path):
-    if item.endswith('.cc') or item.endswith('.cpp') or item.endswith('.cxx'):
-        abs_item = os.path.join(message_handle_src_path, item)
-        message_handle_sources.append(abs_item)
-echo_server_sources.extend(message_handle_sources)
-client_sources.extend(message_handle_sources)
-
 print('\nbuild target:{0}'.format(echo_server_bin))
 print(echo_server_sources)
 print('\nbuild target:{0}'.format(client_bin))
 print(client_sources)
 
-bin_dir = os.path.join(env['sbuild'], 'bin')
+bin_dir = os.path.join(env['build_dir'], 'bin')
 
 env.Program(target = os.path.join(bin_dir, echo_server_bin),
         source  = echo_server_sources,
         CPPPATH = env['headers'],
         LIBPATH = env['libs'],
-        LIBS    = ['pthread'],
+        LIBS    = ['transport','msghandler','epoll', 'mbase', 'pthread'],
         CCFLAGS = env['ccflags']
         )
 
@@ -63,6 +35,6 @@ env.Program(target = os.path.join(bin_dir, client_bin),
         source  = client_sources,
         CPPPATH = env['headers'],
         LIBPATH = env['libs'],
-        LIBS    = ['pthread'],
+        LIBS    = ['transport','msghandler','epoll', 'mbase', 'pthread'],
         CCFLAGS = env['ccflags']
         )

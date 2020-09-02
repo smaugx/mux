@@ -11,7 +11,9 @@ env = Environment()
 abs_path = os.getcwd()
 print('workspace path:{0}'.format(abs_path))
 
-headers = ['.', 'transport', 'epoll', 'mbase', 'third-party/include', 'message_handle']
+sbuild_dir = 'sbuild'
+
+headers = ['.', 'third-party/include']
 libs = ['./third-party/lib']
 
 abs_headers = []
@@ -22,9 +24,14 @@ for item in headers:
     abs_headers.append(abs_item)
 
 
+#abs_headers.append('.')  # attention: this is import,for build SConscript current dir(sub dir)
+
 for item in libs:
     abs_item = os.path.join(abs_path, item)
     abs_libs.append(abs_item)
+
+build_dir = os.path.join(abs_path, sbuild_dir)
+abs_libs.append(os.path.join(build_dir, 'lib'))
 
 CCFLAGS = '-ggdb -std=c++11'
 
@@ -42,12 +49,19 @@ env["headers"] = abs_headers
 env["libs"]    = abs_libs
 env["MUX_DIR"] = abs_path 
 env['ccflags'] = CCFLAGS
-env['sbuild'] = os.path.join(abs_path, 'sbuild')
+env['build_dir'] = build_dir
 
 Export('env')
 
 
-SConscript(['./demo/echo/SConscript'])
-SConscript(['./demo/bench/SConscript'])
+#SConscript(['./demo/echo/SConscript'])
+#SConscript(['./demo/bench/SConscript'])
 
-print("\n All Done, Please Check {0}".format(env['sbuild']))
+SConscript(['./mbase/SConscript'])
+SConscript(['./message_handle/SConscript'])
+SConscript(['./epoll/SConscript'])
+SConscript(['./transport/SConscript'])
+SConscript(['./demo/bench/SConscript'])
+SConscript(['./demo/echo/SConscript'])
+
+print("\n All Done, Please Check {0}".format(env['build_dir']))

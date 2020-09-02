@@ -17,6 +17,7 @@ int main(int argc, char* argv[]) {
     file_logger->flush_on(spdlog::level::warn);
 
     MUX_DEBUG("log init");
+    MUX_WARN("log init");
 
 
     std::string local_ip {"127.0.0.1"};
@@ -35,6 +36,7 @@ int main(int argc, char* argv[]) {
     };
 
     std::shared_ptr<transport::MessageHandler> msg_handle = std::make_shared<transport::MessageHandler>();
+    msg_handle->Init();
     msg_handle->RegisterOnDispatchCallback(recv_call);
     auto dispath_call = [&](transport::PacketPtr& packet) -> void {
         return msg_handle->HandleMessage(packet);

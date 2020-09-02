@@ -37,7 +37,9 @@ int main(int argc, char* argv[]) {
         return;
     };
 
-   std::shared_ptr<transport::MessageHandler> msg_handle = std::make_shared<transport::MessageHandler>();
+
+    std::shared_ptr<transport::MessageHandler> msg_handle = std::make_shared<transport::MessageHandler>();
+    msg_handle->Init();
     msg_handle->RegisterOnDispatchCallback(recv_call);
     auto dispath_call = [&](transport::PacketPtr& packet) -> void {
         return msg_handle->HandleMessage(packet);

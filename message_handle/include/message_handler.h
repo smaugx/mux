@@ -58,6 +58,7 @@ typedef std::shared_ptr<ThreadConsumer> ThreadConsumerPtr;
 
 
 class MessageHandler : public std::enable_shared_from_this<MessageHandler> {
+//class MessageHandler {
 public:
     MessageHandler(const MessageHandler&)                 = delete;
     MessageHandler& operator=(const MessageHandler&)      = delete;
@@ -72,6 +73,7 @@ public:
     PacketPtr GetMessageFromQueue();
     void RegisterOnDispatchCallback(callback_recv_t callback);
     void UnRegisterOnDispatchCallback();
+    void Init();
 
 private:
     void Join();
