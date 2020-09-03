@@ -1,4 +1,4 @@
-# keep all cpp files in varibale ${message_handler_src}
+# keep all cpp files in varibale ${epoll_src}
 aux_source_directory(./src epoll_src)
 
 add_library(epoll STATIC ${epoll_src})

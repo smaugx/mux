@@ -15,6 +15,16 @@ add_definitions(
     -DTEST2   # define marco
 )
 
+option(XENABLE_TEST3  "enable test3 marco" OFF)
+
+if (XENABLE_TEST3) 
+    add_definitions(-DTEST3)
+endif()
+
+if (NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Debug)
+endif()
+
 # common compiling options
 add_compile_options(
     -Wl,--no-as-needed
@@ -26,18 +36,8 @@ add_compile_options(
     -fPIC
 )
 
-option(XENABLE_TEST3  "enable test3 marco" OFF)
-
 set(EXECUTABLE_OUTPUT_PATH ${MUX_BINARY_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${MUX_BINARY_DIR}/lib)
-
-if (XENABLE_TEST3) 
-    add_definitions(-DTEST3)
-endif()
-
-if (NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE Debug)
-endif()
 
 
 message(STATUS "CMAKE_BUILD_TYPE:" ${CMAKE_BUILD_TYPE})
