@@ -32,6 +32,7 @@ protected:
     int32_t CreateEpoll();
     int32_t CreateSocket();
     int32_t Connect(int32_t listenfd);
+    int32_t MakeSocketNonBlock(int32_t fd);
     int32_t UpdateEpollEvents(int efd, int op, int fd, int events);
     void OnSocketRead(int32_t fd);
     void OnSocketWrite(int32_t fd);

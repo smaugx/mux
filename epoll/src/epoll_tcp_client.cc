@@ -49,8 +49,12 @@ bool EpollTcpClient::Start() {
         return false;
     }
     handle_ = cli_fd;
+    lr = MakeSocketNonBlock(handle_);
+    if (lr < 0) {
+        return false;
+    }
 
-    int er = UpdateEpollEvents(efd_, EPOLL_CTL_ADD, handle_, EPOLLIN | EPOLLET);
+    int er = UpdateEpollEvents(efd_, EPOLL_CTL_ADD, handle_, EPOLLIN | EPOLLOUT | EPOLLET);
     if (er < 0) {
         ::close(handle_);
         return false;
@@ -64,7 +68,7 @@ bool EpollTcpClient::Start() {
     }
     th_loop_->detach();
 
-    MUX_INFO("EpollTcpClient Start OK, target ip:{0} port:{1}", server_ip_, server_port_);
+    MUX_INFO("EpollTcpClient Start OK, target ip:{0} port:{1} fd:{2}", server_ip_, server_port_, handle_);
 
     return true;
 }
@@ -113,6 +117,20 @@ int32_t EpollTcpClient::Connect(int32_t cli_fd) {
     return 0;
 }
 
+int32_t EpollTcpClient::MakeSocketNonBlock(int32_t fd) {
+    int flags = fcntl(fd, F_GETFL, 0);
+    if (flags < 0) {
+        MUX_ERROR("fcntl failed in fd:{0}", fd);
+        return -1;
+    }
+    int r = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+    if (r < 0) {
+        MUX_ERROR("fcntl failed in fd:{0}", fd);
+        return -1;
+    }
+    return 0;
+}
+
 int32_t EpollTcpClient::UpdateEpollEvents(int efd, int op, int fd, int events) {
     struct epoll_event ev;
     memset(&ev, 0, sizeof(ev));
@@ -149,6 +167,7 @@ void EpollTcpClient::OnSocketRead(int32_t fd) {
         std::string msg(read_buf, n);
         PacketPtr packet = std::make_shared<Packet>(fd, msg);
         if (recv_callback_) {
+            MUX_DEBUG("recv callback");
             recv_callback_(packet);
         } else {
             MUX_WARN("no recv callback reigistered!");
@@ -171,6 +190,8 @@ void EpollTcpClient::OnSocketRead(int32_t fd) {
         MUX_ERROR("peer maybe closed, will close this fd:{0}.", fd);
         return;
     }
+    // should not come here
+    MUX_ERROR("invalid read ret = {0}", n);
 }
 
 // handle write events on fd (usually happens when sending big files)
@@ -216,19 +237,23 @@ void EpollTcpClient::EpollLoop() {
             int events = alive_events[i].events;
 
             if ( (events & EPOLLERR) || (events & EPOLLHUP) ) {
+                MUX_DEBUG("epollerr or epollhup");
                 MUX_ERROR("epoll_wait error, will close fd:{0}", fd);
                 // An error has occured on this fd, or the socket is not ready for reading (why were we notified then?).
                 ::close(fd);
             } else  if (events & EPOLLRDHUP) {
+                MUX_DEBUG("epollrdhup");
                 // Stream socket peer closed connection, or shut down writing half of connection.
                 // more inportant, We still to handle disconnection when read()/recv() return 0 or -1 just to be sure.
                 MUX_WARN("peer maybe closed, will close this fd:{0}", fd);
                 // close fd and epoll will remove it
                 ::close(fd);
             } else if ( events & EPOLLIN ) {
+                MUX_DEBUG("epollin");
                 // other fd read event coming, meaning data coming
                 OnSocketRead(fd);
             } else if ( events & EPOLLOUT ) {
+                MUX_DEBUG("epollout");
                 // write event for fd (not including listen-fd), meaning send buffer is available for big files
                 OnSocketWrite(fd);
             } else {

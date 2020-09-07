@@ -53,7 +53,7 @@ bool EpollTcpServer::Start() {
     }
     handle_ = listenfd;
 
-    int er = UpdateEpollEvents(efd_, EPOLL_CTL_ADD, handle_, EPOLLIN | EPOLLET);
+    int er = UpdateEpollEvents(efd_, EPOLL_CTL_ADD, handle_, EPOLLIN | EPOLLOUT | EPOLLET);
     if (er < 0) {
         ::close(handle_);
         return false;
@@ -69,7 +69,6 @@ bool EpollTcpServer::Start() {
     th_loop_->detach();
 
     MUX_INFO("EpollTcpServer Start OK, local ip:{0} port:{1}", local_ip_, local_port_);
-    MUX_DEBUG("EpollTcpServer Start OK, local ip:{0} port:{1}", local_ip_, local_port_);
     return true;
 }
 
@@ -111,6 +110,7 @@ int32_t EpollTcpServer::CreateSocket() {
         ::close(listenfd);
         return -1;
     }
+    MUX_INFO("create and bind socket:{0} success", listenfd);
     return listenfd;
 }
 
@@ -183,7 +183,7 @@ void EpollTcpServer::OnSocketAccept() {
             continue;
         }
 
-        int er = UpdateEpollEvents(efd_, EPOLL_CTL_ADD, cli_fd, EPOLLIN | EPOLLRDHUP | EPOLLET);
+        int er = UpdateEpollEvents(efd_, EPOLL_CTL_ADD, cli_fd, EPOLLIN | EPOLLOUT| EPOLLRDHUP | EPOLLET);
         if (er < 0 ) {
             ::close(cli_fd);
             continue;
@@ -277,16 +277,19 @@ void EpollTcpServer::EpollLoop() {
             int events = alive_events[i].events;
 
             if ( (events & EPOLLERR) || (events & EPOLLHUP) ) {
+                MUX_DEBUG("epollerr or epollhup");
                 MUX_ERROR("epoll_wait error, will close fd:{0}", fd);
                 // An error has occured on this fd, or the socket is not ready for reading (why were we notified then?).
                 ::close(fd);
             } else  if (events & EPOLLRDHUP) {
+                MUX_DEBUG("epollrdhup");
                 // Stream socket peer closed connection, or shut down writing half of connection.
                 // more inportant, We still to handle disconnection when read()/recv() return 0 or -1 just to be sure.
                 MUX_WARN("peer maybe closed, will close this fd:{0}", fd);
                 // close fd and epoll will remove it
                 ::close(fd);
             } else if ( events & EPOLLIN ) {
+                MUX_DEBUG("epollin");
                 if (fd == handle_) {
                     // listen fd coming connections
                     OnSocketAccept();
@@ -295,6 +298,7 @@ void EpollTcpServer::EpollLoop() {
                     OnSocketRead(fd);
                 }
             } else if ( events & EPOLLOUT ) {
+                MUX_DEBUG("epollout");
                 // write event for fd (not including listen-fd), meaning send buffer is available for big files
                 OnSocketWrite(fd);
             } else {
