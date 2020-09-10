@@ -4,7 +4,7 @@
 #include <memory>
 
 #include "transport/include/transport.h"
-#include "epoll/include/epoll_tcp_server.h"
+#include "epoll/include/event_trigger.h"
 
 
 namespace mux {
@@ -27,19 +27,17 @@ public:
     bool Start() override;
     bool Stop() override;
     void RegisterOnRecvCallback(callback_recv_t callback);
+    void RegisterOnAcceptCallback(callback_accept_t callback);
     void UnRegisterOnRecvCallback();
 
     int32_t SendData(const PacketPtr& packet);
-    int32_t SendData(int32_t fd, const std::string& msg);
+    int32_t SendData(const std::string& msg);
 
 private:
     bool is_server_ { true }; // role is server as default
-    std::string ip_;  // for server is local_ip; for client is server_ip
-    uint16_t port_ { 0 }; // for server is local_port; for client is server_port
-
-    // replace sock_ with other way, such as asio
-    // using epoll
-    ETBasePtr sock_{ nullptr };
+    std::string ip_; // for server set local bind ip:port; for client set server ip:port
+    uint16_t port_ { 0 };
+    EventTriggerBasePtr event_trigger_ { nullptr };
 };
 
 typedef std::shared_ptr<TcpTransport> TcpTransportPtr;

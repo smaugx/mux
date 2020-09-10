@@ -1,4 +1,4 @@
-#include "transport/include/tcp_transport.h"
+include "transport/include/tcp_transport.h"
 
 #include <cassert>
 
@@ -18,17 +18,17 @@ TcpTransport::TcpTransport(
         const std::string& ip,
         uint16_t port,
         bool is_server)
-    : is_server_ { is_server },
-      ip_ { ip },
-      port_ { port } {
+    : is_server_ { is_server }
+      ip_(ip),
+      port_(port) {
 
-    assert(!sock_);
+    assert(!event_trigger_);
     if (is_server_) {
-        sock_ = std::make_shared<ETServer>(ip_, port_);
+        event_trigger_ = std::make_shared<EventTriggerSvr>(ip, port);
     } else {
-        sock_ = std::make_shared<ETClient>(ip_, port_);
+        event_trigger_ = std::make_shared<EventTriggerCli>(ip, port);
     }
-    assert(sock_);
+    assert(event_trigger_);
 }
 
 TcpTransport::~TcpTransport() {
@@ -41,39 +41,44 @@ bool TcpTransport::Start() {
         MUX_ERROR("invalid ip:{0} or port:{1}", ip_, port_);
         return false;
     }
-    if (!sock_) {
-        MUX_ERROR("sock_ invalid");
+    if (!event_trigger_) {
+        MUX_ERROR("event_trigger_ invalid");
         return false;
     }
 
-    return sock_->Start();
+    return event_trigger_->Start();
 }
 
 bool TcpTransport::Stop() {
-    if (sock_) {
-        sock_->Stop();
-        sock_ = nullptr;
+    if (event_trigger_) {
+        event_trigger_->Stop();
+        event_trigger_ = nullptr;
     }
     MUX_INFO("TcpTransport Stop");
     return true;
 }
 
 int32_t TcpTransport::SendData(const PacketPtr& packet) {
-    return sock_->SendData(packet);
+    return event_trigger_->GetSocket()->SendData(packet);
 }
 
-int32_t TcpTransport::SendData(int32_t fd, const std::string& msg) {
-    auto packet = std::make_shared<Packet>(fd, msg);
-    return sock_->SendData(packet);
+int32_t TcpTransport::SendData(const std::string& msg) {
+    return event_trigger_->GetSocket()->SendData(msg);
+}
 }
 
 void TcpTransport::RegisterOnRecvCallback(callback_recv_t callback) {
     assert(callback);
-    sock_->RegisterOnRecvCallback(callback);
+    event_trigger_->RegisterOnRecvCallback(callback);
 }
 
 void TcpTransport::UnRegisterOnRecvCallback() {
-    sock_->UnRegisterOnRecvCallback();
+    event_trigger_->UnRegisterOnRecvCallback();
+}
+
+void TcpTransport::RegisterOnAcceptCallback(callback_accept_t callback) {
+    assert(callback);
+    event_trigger_->RegisterOnAcceptCallback(callback);
 }
 
 

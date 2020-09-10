@@ -2,11 +2,15 @@
 
 #include <thread>
 
+#include "epoll/include/socket_imp.h"
 #include "mbase/packet.h"
 
 namespace mux {
 
 namespace transport {
+
+using callback_recv_t    = std::function<void(transport::PacketPtr&)>;
+using callback_accept_t  = std::function<void(transport::SocketPtr&)>;
 
 class EpollTcpBase {
 public:
@@ -20,15 +24,15 @@ public:
 public:
     virtual bool Start() = 0;
     virtual bool Stop()  = 0;
-    virtual int32_t SendData(const PacketPtr& data) = 0;
     virtual void RegisterOnRecvCallback(callback_recv_t callback) = 0;
     virtual void UnRegisterOnRecvCallback() = 0;
+    virtual void RegisterOnAcceptCallback(callback_accept_t callback) = 0;
 };
 
 using ETBase = EpollTcpBase;
 
 typedef std::shared_ptr<ETBase> ETBasePtr;
 
-}
+} // end namespace transport
 
-}
+} // end namespace mux

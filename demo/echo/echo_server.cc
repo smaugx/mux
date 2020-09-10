@@ -55,7 +55,7 @@ int main(int argc, char* argv[]) {
         std::cout << "tcp_echo_server start failed!" << std::endl;
         exit(1);
     }
-    std::cout << "############tcp_echo_server ["<< local_ip << ":" << local_port << "] started!################" << std::endl;
+    std::cout << "############tcp_echo_server[" << tcp_echo_server->get_local_ip() << ":" << tcp_echo_server->get_local_port()  << "] started!################\n" << std::endl;
     MUX_INFO("############tcp_echo_server [{0}:{1}] started!################", local_ip, local_port);
 
     while (true) {

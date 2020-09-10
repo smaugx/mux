@@ -12,7 +12,7 @@ namespace transport {
 
 class EpollTcpClient : public ETBase {
 public:
-    EpollTcpClient()                                       = default;
+    EpollTcpClient()                                       = delete;
     EpollTcpClient(const EpollTcpClient& other)            = delete;
     EpollTcpClient& operator=(const EpollTcpClient& other) = delete;
     EpollTcpClient(EpollTcpClient&& other)                 = delete;
@@ -24,9 +24,12 @@ public:
 public:
     bool Start() override;
     bool Stop() override;
-    int32_t SendData(const PacketPtr& packet) override;
     void RegisterOnRecvCallback(callback_recv_t callback) override;
     void UnRegisterOnRecvCallback() override;
+    void RegisterOnAcceptCallback(callback_accept_t callback) override;
+    inline SocketPtr GetSocket() {
+        return main_sock_;
+    }
 
 protected:
     int32_t CreateEpoll();
@@ -34,19 +37,20 @@ protected:
     int32_t Connect(int32_t listenfd);
     int32_t MakeSocketNonBlock(int32_t fd);
     int32_t UpdateEpollEvents(int efd, int op, int fd, int events);
-    void OnSocketRead(int32_t fd);
-    void OnSocketWrite(int32_t fd);
     void EpollLoop();
 
 
 private:
     std::string server_ip_;
     uint16_t server_port_ { 0 };
+    std::string local_ip_;
+    uint16_t local_port_ {0};
     int32_t handle_ { -1 }; // client fd
     int32_t efd_ { -1 }; // epoll fd
     std::shared_ptr<std::thread> th_loop_ { nullptr };
     bool loop_flag_ { true };
     callback_recv_t recv_callback_ { nullptr };
+    SocketPtr main_sock_ { nullptr }; // for server that is listen handler; for client that is the only handle after connect
 };
 
 using ETClient = EpollTcpClient;
