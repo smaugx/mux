@@ -18,7 +18,7 @@ public:
     EventTriggerBase(EventTriggerBase&& other)                 = delete;
     EventTriggerBase& operator=(EventTriggerBase&& other)      = delete;
 
-    virtual ~EventTriggerBase() = 0;
+    virtual ~EventTriggerBase() {}
 public:
     virtual bool Start() = 0;
     virtual bool Stop() = 0;

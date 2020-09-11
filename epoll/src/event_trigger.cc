@@ -1,5 +1,7 @@
 #include "epoll/include/event_trigger.h"
 
+#include <cassert>
+
 
 namespace mux {
 
@@ -36,7 +38,7 @@ void EventTriggerCli::RegisterOnAcceptCallback(callback_accept_t callback) {
 }
 
 SocketPtr EventTriggerCli::GetSocket() {
-    reactor_->GetSocket();
+    return reactor_->GetSocket();
 }
 
 
@@ -71,7 +73,7 @@ void EventTriggerSvr::RegisterOnAcceptCallback(callback_accept_t callback) {
 }
 
 SocketPtr EventTriggerSvr::GetSocket() {
-    reactor_->GetSocket();
+    return reactor_->GetSocket();
 }
 
 

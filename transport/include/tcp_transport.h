@@ -33,6 +33,17 @@ public:
     int32_t SendData(const PacketPtr& packet);
     int32_t SendData(const std::string& msg);
 
+    inline std::string GetLocalIp() {
+        auto sock = event_trigger_->GetSocket();
+        return sock->GetLocalIp();
+    }
+
+    inline uint16_t GetLocalPort() {
+        //return event_trigger_->GetSocket()->GetLocalPort();
+        auto sock = event_trigger_->GetSocket();
+        return sock->GetLocalPort();
+    }
+
 private:
     bool is_server_ { true }; // role is server as default
     std::string ip_; // for server set local bind ip:port; for client set server ip:port

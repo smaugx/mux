@@ -50,7 +50,7 @@ int main(int argc, char* argv[]) {
         MUX_ERROR("tcp_client start failed!");
         exit(1);
     }
-    std::cout << "############tcp_client[" << tcp_client->get_local_ip() << ":" << tcp_client->get_local_port()  << "] started! connected to ["<< server_ip << ":" << server_port << "] ################\n" << std::endl;
+    std::cout << "############tcp_client[" << tcp_client->GetLocalIp() << ":" << tcp_client->GetLocalPort()  << "] started! connected to ["<< server_ip << ":" << server_port << "] ################\n" << std::endl;
     MUX_INFO("############tcp_client started!################");
 
     /*
@@ -65,9 +65,11 @@ int main(int argc, char* argv[]) {
     std::cout << "send "<< send_total << " packets,time takes:" << diff.count() << std::endl;
     */
 
+    /*
     while (true) {
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
+    */
 
     while (true) {
         std::cout << std::endl<<  "input:";

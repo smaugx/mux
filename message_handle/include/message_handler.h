@@ -13,6 +13,7 @@
 #include <queue>
 
 #include "mbase/packet.h"
+#include "epoll/include/socket_imp.h"
 
 namespace mux {
 

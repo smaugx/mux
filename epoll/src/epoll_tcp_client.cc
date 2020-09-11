@@ -119,6 +119,16 @@ int32_t EpollTcpClient::Connect(int32_t cli_fd) {
         MUX_ERROR("connect {0} {1} failed!", server_ip_, server_port_);
         return -1;
     }
+
+    struct sockaddr_in local_addr;
+    int la_len = sizeof(local_addr);
+    if (getsockname(cli_fd,  (struct sockaddr *)&local_addr, (socklen_t*)&la_len) == -1) {
+        MUX_ERROR("getsockname failed");
+        return -1;
+    }
+    local_ip_ = inet_ntoa(local_addr.sin_addr);
+    local_port_ = ntohs(local_addr.sin_port);
+
     return 0;
 }
 
@@ -247,21 +257,21 @@ void EpollTcpClient::EpollLoop() {
             int events = alive_events[i].events;
 
             if ( (events & EPOLLERR) || (events & EPOLLHUP) ) {
-                MUX_ERROR("epoll_wait error, will close fd:{0}", fd);
+                MUX_ERROR("epoll_wait error, will close fd:{0}", sock_core->fd_);
                 // An error has occured on this fd, or the socket is not ready for reading (why were we notified then?).
                 sock_core->notify_socket_event(ERR_EVENT);
             } else  if (events & EPOLLRDHUP) {
                 // Stream socket peer closed connection, or shut down writing half of connection.
                 // more inportant, We still to handle disconnection when read()/recv() return 0 or -1 just to be sure.
-                MUX_WARN("peer maybe closed, will close this fd:{0}", fd);
+                MUX_WARN("peer maybe closed, will close this fd:{0}", sock_core->fd_);
                 // close fd and epoll will remove it
                 sock_core->notify_socket_event(ERR_EVENT);
             } else if ( events & EPOLLIN ) {
                 // other fd read event coming, meaning data coming
-                sock_core_->notify_socket_event(READ_EVENT);
+                sock_core->notify_socket_event(READ_EVENT);
             } else if ( events & EPOLLOUT ) {
                 // write event for fd (not including listen-fd), meaning send buffer is available for big files
-                sock_core_->notify_socket_event(WRITE_EVENT);
+                sock_core->notify_socket_event(WRITE_EVENT);
             } else {
                 MUX_WARN("unknow epoll event");
             }

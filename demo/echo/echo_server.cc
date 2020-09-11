@@ -38,7 +38,8 @@ int main(int argc, char* argv[]) {
     }
 
     auto recv_call = [&](const transport::PacketPtr& packet) -> void {
-        tcp_echo_server->SendData(packet);
+        std::cout << "recv packet:" << packet->msg_ << std::endl;
+        //tcp_echo_server->SendData(packet);
         return;
     };
 
@@ -55,7 +56,7 @@ int main(int argc, char* argv[]) {
         std::cout << "tcp_echo_server start failed!" << std::endl;
         exit(1);
     }
-    std::cout << "############tcp_echo_server[" << tcp_echo_server->get_local_ip() << ":" << tcp_echo_server->get_local_port()  << "] started!################\n" << std::endl;
+    std::cout << "############tcp_echo_server[" << tcp_echo_server->GetLocalIp() << ":" << tcp_echo_server->GetLocalPort()  << "] started!################\n" << std::endl;
     MUX_INFO("############tcp_echo_server [{0}:{1}] started!################", local_ip, local_port);
 
     while (true) {

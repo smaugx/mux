@@ -53,7 +53,7 @@ bool EpollTcpServer::Start() {
     }
     handle_ = listenfd;
 
-    auto sockptr = std::make_shared<Socket>(handle_);
+    auto sockptr = std::make_shared<Socket>(handle_, local_ip_, local_port_);
     int er = UpdateEpollEvents(efd_, EPOLL_CTL_ADD, handle_, EPOLLIN | EPOLLOUT | EPOLLET, sockptr->GetSocketImp());
     if (er < 0) {
         sockptr->Close();
@@ -305,6 +305,7 @@ void EpollTcpServer::EpollLoop() {
                 // An error has occured on this fd, or the socket is not ready for reading (why were we notified then?).
                 sock_core->notify_socket_event(ERR_EVENT);
             } else  if (events & EPOLLRDHUP) {
+                MUX_DEBUG("epollrdhup");
                 // Stream socket peer closed connection, or shut down writing half of connection.
                 // more inportant, We still to handle disconnection when read()/recv() return 0 or -1 just to be sure.
                 MUX_WARN("peer maybe closed, will close this fd:{0}", sock_core->fd_);
@@ -312,15 +313,18 @@ void EpollTcpServer::EpollLoop() {
                 sock_core->notify_socket_event(ERR_EVENT);
             } else if ( events & EPOLLIN ) {
                 if (sock_core->fd_ == handle_) {
+                    MUX_DEBUG("epollin accept");
                     // listen fd coming connections
                     OnSocketAccept();
                 } else {
+                    MUX_DEBUG("epollin read");
                     // other fd read event coming, meaning data coming
-                    sock_core_->notify_socket_event(READ_EVENT);
+                    sock_core->notify_socket_event(READ_EVENT);
                 }
             } else if ( events & EPOLLOUT ) {
+                MUX_DEBUG("epollout");
                 // write event for fd (not including listen-fd), meaning send buffer is available for big files
-                sock_core_->notify_socket_event(WRITE_EVENT);
+                sock_core->notify_socket_event(WRITE_EVENT);
             } else {
                 MUX_WARN("unknow epoll event");
             }

@@ -1,4 +1,4 @@
-include "transport/include/tcp_transport.h"
+#include "transport/include/tcp_transport.h"
 
 #include <cassert>
 
@@ -18,7 +18,7 @@ TcpTransport::TcpTransport(
         const std::string& ip,
         uint16_t port,
         bool is_server)
-    : is_server_ { is_server }
+    : is_server_ { is_server },
       ip_(ip),
       port_(port) {
 
@@ -59,12 +59,13 @@ bool TcpTransport::Stop() {
 }
 
 int32_t TcpTransport::SendData(const PacketPtr& packet) {
+    // for server, forbidden using this
     return event_trigger_->GetSocket()->SendData(packet);
 }
 
 int32_t TcpTransport::SendData(const std::string& msg) {
+    // for server, forbidden using this
     return event_trigger_->GetSocket()->SendData(msg);
-}
 }
 
 void TcpTransport::RegisterOnRecvCallback(callback_recv_t callback) {
@@ -77,6 +78,7 @@ void TcpTransport::UnRegisterOnRecvCallback() {
 }
 
 void TcpTransport::RegisterOnAcceptCallback(callback_accept_t callback) {
+    // for server only
     assert(callback);
     event_trigger_->RegisterOnAcceptCallback(callback);
 }

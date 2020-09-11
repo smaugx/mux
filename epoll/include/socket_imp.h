@@ -16,7 +16,12 @@ static const int32_t ERR_EVENT   = -1;
 static const int32_t READ_EVENT  = 0;
 static const int32_t WRITE_EVENT = 1;
 
+class Socket;
+typedef std::shared_ptr<Socket> SocketPtr;
+
 using SocketHandlerFunc = std::function<void(int32_t)>;
+using callback_recv_t    = std::function<void(transport::PacketPtr&)>;
+using callback_accept_t  = std::function<void(transport::SocketPtr&)>;
 
 class SocketCore {
 public:
@@ -27,8 +32,13 @@ public:
     SocketCore& operator=(SocketCore&&)        = delete;
 
 public:
-    SocketCore(int fd)
+    SocketCore(
+            int fd,
+            const std::string& local_ip,
+            uint16_t local_port)
         : fd_(fd),
+          local_ip_(local_ip),
+          local_port_(local_port),
           closed_(false) {}
 
     SocketCore(
@@ -87,13 +97,21 @@ public:
 
 public:
     Socket();
-    explicit Socket(int fd);  // special for listen handle
+    Socket(
+            int fd,
+            const std::string& local_ip,
+            uint16_t local_port);  // special for listen handle
     Socket(
             int fd,
             const std::string& local_ip,
             uint16_t local_port,
             const std::string& remote_ip,
             uint16_t remote_port);
+
+    ~Socket() {
+        /*Close();
+         */
+    }
 
 public:
     int32_t SendData(const std::string& data);
@@ -103,6 +121,23 @@ public:
     void UnRegisterOnRecvCallback();
     void* GetSocketImp();
 
+    inline std::string GetLocalIp() {
+        return sock_core_->local_ip_;
+    }
+    
+    inline uint16_t GetLocalPort() {
+        return sock_core_->local_port_;
+    }
+
+    inline std::string GetRemoteIp() {
+        return sock_core_->remote_ip_;
+    }
+
+    inline uint16_t GetRemotePort() {
+        return sock_core_->remote_port_;
+    }
+
+
 protected:
     void SocketHandler(int32_t event_type);
 
@@ -111,7 +146,6 @@ private:
     callback_recv_t recv_callback_ { nullptr };
 };
 
-typedef std::shared_ptr<Socket> SocketPtr;
 
 
 } // end namespace transport

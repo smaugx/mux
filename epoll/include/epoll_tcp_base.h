@@ -9,8 +9,6 @@ namespace mux {
 
 namespace transport {
 
-using callback_recv_t    = std::function<void(transport::PacketPtr&)>;
-using callback_accept_t  = std::function<void(transport::SocketPtr&)>;
 
 class EpollTcpBase {
 public:

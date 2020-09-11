@@ -1,5 +1,4 @@
-//#include "epoll/include/socket_imp.h"
-#include "socket_imp.h"
+#include "epoll/include/socket_imp.h"
 
 #include <memory>
 
@@ -15,8 +14,11 @@ Socket::Socket() {
     sock_core_->register_event_handler(std::bind(&Socket::SocketHandler, this, std::placeholders::_1));
 }
 
-Socket::Socket(int fd) {
-    sock_core_ = new SocketCore(fd);
+Socket::Socket(
+        int fd,
+        const std::string& local_ip,
+        uint16_t local_port) {
+    sock_core_ = new SocketCore(fd, local_ip, local_port);
     // do not register event_handler callback
 }
 
@@ -32,6 +34,19 @@ Socket::Socket(
 
 void* Socket::GetSocketImp() {
     return (void*)(sock_core_);
+}
+
+
+void Socket::RegisterOnRecvCallback(callback_recv_t callback) {
+    assert(!recv_callback_);
+    recv_callback_ = callback;
+    MUX_INFO("RegisterOnRecvCallback for socket:{0}", sock_core_->fd_);
+}
+
+void Socket::UnRegisterOnRecvCallback() {
+    assert(recv_callback_);
+    recv_callback_ = nullptr;
+    MUX_INFO("UnRegisterOnRecvCallback for socket:{0}", sock_core_->fd_);
 }
 
 void Socket::Close() {
@@ -75,44 +90,47 @@ int32_t Socket::SendData(const PacketPtr& packet) {
 }
 
 void Socket::SocketHandler(int32_t event_type) {
+    int fd = sock_core_->fd_;
     if (event_type == ERR_EVENT) {
-        MUX_ERROR("Socket: fd={0} remote_endpoint={1}:{2} event_type: error", sock_core_->fd_, sock_core_->remote_ip_, sock_core_->remote_port_);
+        MUX_ERROR("Socket: fd={0} remote_endpoint={1}:{2} event_type: error", fd, sock_core_->remote_ip_, sock_core_->remote_port_);
         Close();
     } else if (event_type == READ_EVENT) {
-        MUX_DEBUG("Socket: fd={0} remote_endpoint={1}:{2} event_type: read", sock_core_->fd_, sock_core_->remote_ip_, sock_core_->remote_port_);
+        MUX_DEBUG("Socket: fd={0} remote_endpoint={1}:{2} event_type: read", fd, sock_core_->remote_ip_, sock_core_->remote_port_);
         char read_buf[4096];
         bzero(read_buf, sizeof(read_buf));
         int n = -1;
-        while ( (n = ::read(sock_core_->fd_, read_buf, sizeof(read_buf))) > 0) {
+        while ( (n = ::read(fd, read_buf, sizeof(read_buf))) > 0) {
             // callback for recv
             std::string msg(read_buf, n);
             PacketPtr packet = std::make_shared<Packet>(msg);
-            MUX_DEBUG("recv_size:{0} from fd:{1} remote:{2}:{3}", n, sock_core_->fd_, packet->from_ip_addr_, packet->from_ip_port_);
+            MUX_DEBUG("recv_size:{0} from fd:{1} remote:{2}:{3}", n, fd, packet->from_ip_addr_, packet->from_ip_port_);
             if (recv_callback_) {
+                MUX_DEBUG("recv:{0}", packet->msg_);
                 recv_callback_(packet);
             } else {
                 MUX_WARN("no recv callback reigistered!");
             }
+            bzero(read_buf, sizeof(read_buf));
         }
         if (n == -1) {
             if (errno == EAGAIN || errno == EWOULDBLOCK) {
                 // read finished
-                MUX_DEBUG("read finished in fd:{0}", sock_core_->fd_);
+                MUX_DEBUG("read finished in fd:{0}", fd);
                 return;
             }
             // something goes wrong for this fd, should close it
             Close();
-            MUX_ERROR("something goes wrong, will close this fd:{0}.", sock_core_->fd_);
+            MUX_ERROR("something goes wrong, will close this fd:{0}.", fd);
             return;
         }
         if (n == 0) {
             // this may happen when client close socket. EPOLLRDHUP usually handle this, but just make sure; should close this fd
             Close();
-            MUX_ERROR("peer maybe closed, will close this fd:{0}.", sock_core_->fd_);
+            MUX_ERROR("peer maybe closed, will close this fd:{0}.", fd);
             return;
         }
     } else if (event_type == WRITE_EVENT) {
-        MUX_DEBUG("Socket: fd={0} remote_endpoint={1}:{2} event_type: write", sock_core_->fd_, sock_core_->remote_ip_, sock_core_->remote_port_);
+        MUX_DEBUG("Socket: fd={0} remote_endpoint={1}:{2} event_type: write", fd, sock_core_->remote_ip_, sock_core_->remote_port_);
         // TODO(smaug)
     } else {
         MUX_ERROR("invalid event_type:{0}", event_type);
