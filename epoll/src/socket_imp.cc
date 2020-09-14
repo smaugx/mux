@@ -4,14 +4,7 @@ namespace mux {
 
 namespace transport {
 
-BasicSocket::BasicSocket()
-    : closed_(true) {}
-
-BasicSocket::BasicSocket(int fd)
-    : fd_(fd),
-      closed_(true) {}
-
-BasicSocket::BasicSocket(
+MuxSocket::MuxSocket(
         int fd,
         const std::string& local_ip,
         uint16_t local_port,
@@ -26,7 +19,11 @@ BasicSocket::BasicSocket(
     MUX_INFO("create socket(0) local {1}:{2} remote {3}:{4}", fd_, local_ip_, local_port_, remote_ip_, remote_port_);
 }
 
-void BasicSocket::handle_read() {
+MuxSocket::~MuxSocket() {
+    Close();
+}
+
+void MuxSocket::handle_read() {
     char read_buf[4096];
     bzero(read_buf, sizeof(read_buf));
     int n = -1;
@@ -36,7 +33,12 @@ void BasicSocket::handle_read() {
         std::string msg(read_buf, n);
         PacketPtr packet = std::make_shared<Packet>(msg);
         // finally handle recv data
-        HandleRecvData(packet);
+        //HandleRecvData(packet);
+
+        // using callback or using virtual function both is ok
+        if (callback_) {
+            callback_(packet);
+        }
     }
     if (n == -1) {
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
@@ -58,16 +60,16 @@ void BasicSocket::handle_read() {
     return;
 }
 
-void BasicSocket::handle_write() {
+void MuxSocket::handle_write() {
     // TODO(smaug)
     MUX_INFO("handle write(TODO)");
 }
 
-void BasicSocket::handle_error() {
+void MuxSocket::handle_error() {
     Close();
 }
 
-int32_t BasicSocket::SendData(const std::string& data) {
+int32_t MuxSocket::SendData(const std::string& data) {
     if (closed_) {
         MUX_ERROR("socket closed, not ready for send");
         return -1;
@@ -76,7 +78,7 @@ int32_t BasicSocket::SendData(const std::string& data) {
     return SendData(packet);
 }
 
-int32_t BasicSocket::SendData(const PacketPtr& packet) {
+int32_t MuxSocket::SendData(const PacketPtr& packet) {
     if (closed_) {
         MUX_ERROR("socket closed, not ready for send");
         return -1;
@@ -96,17 +98,28 @@ int32_t BasicSocket::SendData(const PacketPtr& packet) {
     return r;
 }
 
-void BasicSocket::Close() {
+void MuxSocket::Close() {
+    if (closed_) {
+        return;
+    }
     MUX_INFO("close socket(0) local {1}:{2} remote {3}:{4}", fd_, local_ip_, local_port_, remote_ip_, remote_port_);
     ::close(fd_);
     fd_ = -1;
     closed_ = true;
 }
 
-int32_t BasicSocket::HandleRecvData(const PacketPtr& packet) {
+int32_t MuxSocket::HandleRecvData(const PacketPtr& packet) {
     // handle recv here
     MUX_DEBUG("handle recv data");
     MUX_INFO("recv packet size:{0} content:{1}", (packet->msg_).size(), packet->msg_);
+}
+
+void MuxSocket::RegisterOnRecvCallback(callback_accept_t callback) {
+    if (callback_) {
+        return;
+    }
+    callback_ = callback;
+    MUX_INFO("register recv callback for socket {0}:{1}", remote_ip_, remote_port_);
 }
 
 

@@ -24,34 +24,26 @@ namespace transport {
 static const uint32_t kEpollWaitTime = 10; // 10 ms
 static const uint32_t kMaxEvents = 100;
 
-EpollReactor::EpollReactor() {}
+EpollReactor::EpollReactor() {
+    int r = CreateEpoll();
+    assert(r>=0);
+}
 
-EpollReactor::EpollReactor(int32_t handle)
-    : handle_(handle) {}
-
-EpollReactor::EpollReactor(uint32_t eid, int32_t handle)
-    : eid_(eid),
-      handle_(handle) {}
+EpollReactor::EpollReactor(uint32_t eid)
+    : eid_(eid) {
+    int r = CreateEpoll();
+    assert(r>=0);
+}
 
 EpollReactor::~EpollReactor() {
     Stop();
 }
 
 bool EpollReactor::Start() {
-    if (CreateEpoll() < 0) {
-        return false;
-    }
     shutdown_flag_ = false;
     MUX_DEBUG("set epollreactor shutdown_flag {0}", shutdown_flag_);
 
-    if (handle_ != -1) {
-        SocketBase* sock = new BasicSocket(handle_);
-        RegisterDescriptor((void*)&sock, handle_);
-        MUX_INFO("register listen handle:{0} to epollreactor:{1}", handle_, eid_);
-    }
-
     assert(!th_loop_);
-
     th_loop_ = std::make_shared<std::thread>(&EpollReactor::EpollLoop, this);
     if (!th_loop_) {
         MUX_ERROR("create thread for epollloop failed");
@@ -65,9 +57,13 @@ bool EpollReactor::Start() {
 
 
 bool EpollReactor::Stop() {
+    if (shutdown_flag_) {
+        return true;
+    }
     shutdown_flag_ = true;
     ::close(efd_);
     MUX_INFO("EpollReactor Stop OK");
+    return true;
 }
 
 int32_t EpollReactor::CreateEpoll() {
@@ -78,6 +74,21 @@ int32_t EpollReactor::CreateEpoll() {
     }
     efd_ = epollfd;
     return epollfd;
+}
+
+
+int32_t EpollReactor::MakeSocketNonBlock(int32_t fd) {
+    int flags = fcntl(fd, F_GETFL, 0);
+    if (flags < 0) {
+        MUX_ERROR("fcntl failed in fd:{0}", fd);
+        return -1;
+    }
+    int r = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+    if (r < 0) {
+        MUX_ERROR("fcntl failed in fd:{0}", fd);
+        return -1;
+    }
+    return 0;
 }
 
 int32_t EpollReactor::RegisterDescriptor(void* ptr, int fd, int events) {
@@ -99,37 +110,80 @@ int32_t EpollReactor::UpdateEpollEvents(int efd, int op, int fd, int events, voi
 
 
 void EpollReactor::RegisterOnAcceptCallback(callback_accept_t callback) {
-    if (handle_ == -1) {
-        MUX_INFO("not listen descriptor, ignore register accept callback");
-        return;
-    }
     assert(!accept_callback_);
     accept_callback_ = callback;
 }
 
-void EpollReactor::OnSocketAccept() {
-    if (!accept_callback_) {
-        MUX_WARN("accept callback invalid");
-        return;
-    }
+// only for server, client will never generate accept-event
+void EpollReactor::OnSocketAccept(void* ptr) {
+    SocketBase* sock = dynamic_cast<SocketBase*>(ptr);
+    int32_t handle = sock->GetDescriptor();
+    // epoll working on et mode, must read all coming data
+    while (true) {
+        struct sockaddr_in in_addr;
+        socklen_t in_len = sizeof(in_addr);
 
-    accept_callback_(eid_);
+        int cli_fd = accept(handle, (struct sockaddr*)&in_addr, &in_len);
+        if (cli_fd == -1) {
+            if ( (errno == EAGAIN) || (errno == EWOULDBLOCK) ) {
+                MUX_INFO("accept all coming connections success");
+                break;
+            } else {
+                MUX_ERROR("accept error");
+                continue;
+            }
+        }
+
+        sockaddr_in peer;
+        socklen_t p_len = sizeof(peer);
+        int r = getpeername(cli_fd, (struct sockaddr*)&peer, &p_len);
+        if (r < 0) {
+            MUX_WARN("getpeername error in fd:{0}", cli_fd);
+            continue;
+        }
+        std::string remote_ip(inet_ntoa(in_addr.sin_addr));
+        uint16_t remote_port = in_addr.sin_port;
+        MUX_DEBUG("accept connection from {0}:{1}", remote_ip, remote_port);
+        fprintf(stdout, "accept connection from %s:%u\n", remote_ip.c_str(), remote_port);
+        fflush(stdout);
+        int mr = MakeSocketNonBlock(cli_fd);
+        if (mr < 0) {
+            ::close(cli_fd);
+            continue;
+        }
+
+        if (!accept_callback_) {
+            MUX_WARN("accept callback empty, refuse create new connection");
+            continue;
+        }
+
+        SocketBase* new_sock = accept_callback_(cli_fd, remote_ip, remote_port);
+        if (!new_sock) {
+            MUX_ERROR("error create muxsocket");
+            ::close(cli_fd);
+            continue;
+        }
+        int rd = RegisterDescriptor((void*)new_sock, cli_fd);
+        if (rd < 0 ) {
+            new_sock->Close();
+        }
+    } // end while(true)
 }
 
 // handle read events on fd
 void EpollReactor::OnSocketRead(void* ptr) {
-    SocketBase* sock = dynamic_cast<SocketBase*>(ptr);
+    BasicSocket* sock = dynamic_cast<BasicSocket*>(ptr);
     sock->HandleRead();
 }
 
 // handle write events on fd (usually happens when sending big files)
 void EpollReactor::OnSocketWrite(void* ptr) {
-    SocketBase* sock = dynamic_cast<SocketBase*>(ptr);
+    BasicSocket* sock = dynamic_cast<BasicSocket*>(ptr);
     sock->HandleWrite();
 }
 
 void EpollReactor::OnSocketError(void* ptr) {
-    SocketBase* sock = dynamic_cast<SocketBase*>(ptr);
+    BasicSocket* sock = dynamic_cast<BasicSocket*>(ptr);
     sock->HandleError();
 }
 
@@ -159,14 +213,14 @@ void EpollReactor::EpollLoop() {
             } else if ( events & EPOLLIN ) {
                 MUX_DEBUG("epollin");
                 SocketBase* sock = dynamic_cast<SocketBase*>(ptr);
-                int32_t fd = sock->GetDescriptor();
-                if (handle_ != -1 && fd == handle_) {
+                if (sock->CheckListener()) {
                     // listen fd coming connections
-                    OnSocketAccept();
+                    OnSocketAccept(ptr);
                 } else {
                     // other fd read event coming, meaning data coming
                     OnSocketRead(ptr);
                 }
+                sock = nullptr;
             } else if ( events & EPOLLOUT ) {
                 MUX_DEBUG("epollout");
                 // write event for fd (not including listen-fd), meaning send buffer is available for big files

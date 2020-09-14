@@ -3,9 +3,12 @@
 #include <string>
 #include <iostream>
 
-#include "transport/include/tcp_transport.h"
+#include "echo_tcp_acceptor.h"
+#include "echo_socket.h"
+
 #include "message_handle/include/message_handler.h"
-#include "mbase/mux_log.h"
+#include "mbase/include/mux_log.h"
+#include "epoll/include/event_trigger.h"
 
 using namespace mux;
 
@@ -29,16 +32,9 @@ int main(int argc, char* argv[]) {
         local_port = std::atoi(argv[2]);
     }
 
-    bool is_server = true;
-    transport::TcpTransportPtr tcp_echo_server = std::make_shared<transport::TcpTransport>(local_ip, local_port, is_server);
-    if (!tcp_echo_server) {
-        std::cout << "tcp_echo_server create faield!" << std::endl;
-        MUX_ERROR("tcp_echo_server create failed");
-        exit(-1);
-    }
-
     auto recv_call = [&](const transport::PacketPtr& packet) -> void {
-        tcp_echo_server->SendData(packet);
+        std::cout << "recv packet:" << packet->msg_ << std::endl;
+        //tcp_echo_server->SendData(packet);
         return;
     };
 
@@ -48,14 +44,36 @@ int main(int argc, char* argv[]) {
     auto dispath_call = [&](transport::PacketPtr& packet) -> void {
         return msg_handle->HandleMessage(packet);
     };
-    tcp_echo_server->RegisterOnRecvCallback(dispath_call);
 
-    if (!tcp_echo_server->Start()) {
-        MUX_ERROR("tcp_echo_server start failed!");
-        std::cout << "tcp_echo_server start failed!" << std::endl;
+
+    // create and init TcpAcceptor
+    echo::EchoTcpAcceptor* echo_tcp_acceptor = new echo::EchoTcpAcceptor(local_ip, local_port);
+    if (!echo_tcp_acceptor) {
+        MUX_ERROR("echo_tcp_acceptor create failed");
+        std::cout << "echo_tcp_acceptor create failed" << std::endl;
+        exit(-1);
+    }
+
+    echo_tcp_acceptor->RegisterNewSocketRecvCallback(dispath_call);
+
+
+    // create and init EventTrigger
+    int ep_num = 1;
+    std::shared_ptr<EventTrigger> event_trigger = std::make_shared<EventTrigger>(ep_num);
+    auto accept_callback = [&](int32_t cli_fd, const std::string& remote_ip, uint16_t remote_port) -> SocketBase* {
+        return echo_tcp_acceptor->OnSocketAccept(cli_fd, remote_ip, remote_port);
+    };
+    event_trigger->RegisterOnAcceptCallback(accept_callback);
+    event_trigger->RegisterDescriptor((void*)echo_tcp_acceptor);
+    event_trigger->Start();
+
+    if (!echo_tcp_acceptor->Start()) {
+        MUX_ERROR("echo_tcp_acceptor start failed");
+        std::cout << "echo_tcp_acceptor start failed" << std::endl;
         exit(1);
     }
-    std::cout << "############tcp_echo_server ["<< local_ip << ":" << local_port << "] started!################" << std::endl;
+
+    std::cout << "############tcp_echo_server[" << tcp_echo_server->GetLocalIp() << ":" << tcp_echo_server->GetLocalPort()  << "] started!################\n" << std::endl;
     MUX_INFO("############tcp_echo_server [{0}:{1}] started!################", local_ip, local_port);
 
     while (true) {

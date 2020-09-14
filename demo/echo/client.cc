@@ -5,8 +5,9 @@
 #include <string>
 #include <iostream>
 
-#include "transport/include/tcp_transport.h"
-#include "mbase/mux_log.h"
+#include "echo_client.h"
+#include "mbase/include/mux_log.h"
+
 
 using namespace mux;
 
@@ -27,14 +28,13 @@ int main(int argc, char* argv[]) {
     if (argc >= 3) {
         server_port = std::atoi(argv[2]);
     }
-    bool is_server = false;
-    transport::TcpTransportPtr tcp_client = std::make_shared<transport::TcpTransport>(server_ip, server_port, is_server);
+
+    echo::EchoTcpClient* tcp_client = new echo::EchoTcpClient(server_ip, server_port);
     if (!tcp_client) {
         std::cout << "tcp_client create faield!" << std::endl;
         MUX_ERROR("tcp_client create failed");
         exit(-1);
     }
-
 
     auto recv_call = [](const transport::PacketPtr& packet) -> void {
         ::write(1, "\nrecv:", 6);
@@ -45,6 +45,11 @@ int main(int argc, char* argv[]) {
 
     tcp_client->RegisterOnRecvCallback(recv_call);
 
+    // create and init EventTrigger
+    int ep_num = 1;
+    std::shared_ptr<EventTrigger> event_trigger = std::make_shared<EventTrigger>(ep_num);
+    event_trigger->RegisterDescriptor((void*)tcp_client);
+
     if (!tcp_client->Start()) {
         std::cout << "tcp_client start failed!" << std::endl;
         MUX_ERROR("tcp_client start failed!");
@@ -52,6 +57,8 @@ int main(int argc, char* argv[]) {
     }
     std::cout << "############tcp_client started! connected to ["<< server_ip << ":" << server_port << "] ################\n" << std::endl;
     MUX_INFO("############tcp_client started!################");
+
+    event_trigger->Start();
 
     /*
     uint32_t send_total = 1000000;

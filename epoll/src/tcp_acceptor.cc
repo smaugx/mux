@@ -1,4 +1,4 @@
-#include "epoll/include/epoll_tcp_server.h"
+#include "epoll/include/tcp_acceptor.h"
 
 #include <arpa/inet.h>
 #include <errno.h>
@@ -15,7 +15,8 @@
 
 #include <iostream>
 
-#include "mbase/mux_log.h"
+#include "mbase/include/mux_log.h"
+#include "epoll/include/socket_imp.h"
 
 namespace mux {
 
@@ -57,13 +58,25 @@ bool TcpAcceptor::Start() {
 
 bool TcpAcceptor::Stop() {
     Close();
+    ClearConnections();
     MUX_INFO("TcpAcceptor Stop OK");
 }
 
 void TcpAcceptor::Close() {
+    if (handle_ == -1) {
+        return;
+    }
     ::close(handle_);
     handle_ = -1;
     MUX_INFO("close tcp acceptor");
+}
+
+void TcpAcceptor::ClearConnections() {
+    std::unique_lock<std::mutex> lock(connection_vec_mutex_);
+    for (const auto& conn : connection_vec_) {
+        MUX_INFO("close and remove connection {0}:{1}", conn->GetRemoteIp(), conn->GetRemotePort());
+        delete conn;
+    }
 }
 
 int32_t TcpAcceptor::CreateSocket() {
@@ -112,45 +125,41 @@ int32_t TcpAcceptor::Listen(int32_t listenfd) {
     return 0;
 }
 
-void TcpAcceptor::OnSocketAccept() {
-    // epoll working on et mode, must read all coming data
-    while (true) {
-        struct sockaddr_in in_addr;
-        socklen_t in_len = sizeof(in_addr);
-
-        int cli_fd = accept(handle_, (struct sockaddr*)&in_addr, &in_len);
-        if (cli_fd == -1) {
-            if ( (errno == EAGAIN) || (errno == EWOULDBLOCK) ) {
-                MUX_INFO("accept all coming connections success");
-                break;
-            } else {
-                MUX_ERROR("accept error");
-                continue;
-            }
-        }
-
-        sockaddr_in peer;
-        socklen_t p_len = sizeof(peer);
-        int r = getpeername(cli_fd, (struct sockaddr*)&peer, &p_len);
-        if (r < 0) {
-            MUX_WARN("getpeername error in fd:{0}", cli_fd);
-            continue;
-        }
-        MUX_DEBUG("accept connection from {0}", inet_ntoa(in_addr.sin_addr));
-        fprintf(stdout, "accept connection from %s:%u\n", inet_ntoa(in_addr.sin_addr), in_addr.sin_port);
-        fflush(stdout);
-        int mr = MakeSocketNonBlock(cli_fd);
-        if (mr < 0) {
-            ::close(cli_fd);
-            continue;
-        }
-
-        int er = UpdateEpollEvents(efd_, EPOLL_CTL_ADD, cli_fd, EPOLLIN | EPOLLOUT| EPOLLRDHUP | EPOLLET);
-        if (er < 0 ) {
-            ::close(cli_fd);
-            continue;
-        }
+void TcpAcceptor::RegisterNewSocketRecvCallback(callback_recv_t callback) {
+    if (new_socket_recv_callback_) {
+        MUX_WARN("new_socket_recv_callback_ already registered");
+        return;
     }
+    new_socket_recv_callback_ = callback;
+}
+
+SocketBase* TcpAcceptor::RecordNewConnection(SocketBase* new_sock) {
+    if (new_socket_recv_callback_) {
+        new_sock->RegisterOnRecvCallback(new_socket_recv_callback_);
+    } else {
+        MUX_WARN("new_socket_recv_callback_ not ready, handle recv failed");
+    }
+
+    {
+        std::unique_lock<std::mutex> lock(connection_vec_mutex_);
+        connection_vec_.push_back(new_sock);
+        MUX_INFO("add new connection {0}:{1}", new_sock->GetRemoteIp(), new_sock->GetRemotePort());
+    }
+
+    return new_sock;
+}
+
+SocketBase* TcpAcceptor::OnSocketAccept(int32_t cli_fd, std::string remote_ip, uint16_t remote_port) {
+    SocketBase* new_sock = new MuxSocket(cli_fd, local_ip_, local_port_, remote_ip, remote_port);
+    if (!new_sock) {
+        MUX_ERROR("error create muxsocket");
+        return nullptr;
+    }
+
+    // handle your session here
+    
+
+    return RecordNewConnection(new_sock);
 }
 
 

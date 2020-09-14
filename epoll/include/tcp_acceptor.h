@@ -3,44 +3,69 @@
 #include <string>
 #include <memory>
 #include <thread>
+#include <vector>
+#include <mutex>
+
+#include "epoll/include/socket_imp.h"
+#include "mbase/include/mux_utils.h"
 
 namespace mux {
 
 namespace transport {
 
-class EventTrigger;
+class SocketBase;
 
-class TcpAcceptor {
+class TcpAcceptor : public SocketBase {
 public:
     TcpAcceptor()                                    = default;
     TcpAcceptor(const TcpAcceptor& other)            = delete;
     TcpAcceptor& operator=(const TcpAcceptor& other) = delete;
     TcpAcceptor(TcpAcceptor&& other)                 = delete;
     TcpAcceptor& operator=(TcpAcceptor&& other)      = delete;
-    ~TcpAcceptor() override;
+    virtual ~TcpAcceptor();
 
     TcpAcceptor(const std::string& local_ip, uint16_t local_port);
 
 public:
     bool Start() override;
     bool Stop() override;
-    int32_t SendData(const PacketPtr& packet) override;
-    void RegisterOnRecvCallback(callback_recv_t callback) override;
-    void UnRegisterOnRecvCallback() override;
+
+    inline std::string GetLocalIp() override {
+        return local_ip_;
+    }
+
+    inline uint16_t GetLocalPort() override  {
+        return local_port_;
+    }
+
+    inline int32_t GetDescriptor() override {
+        return handle_;
+    }
+
+    inline bool CheckListener() override {
+        return true;
+    }
+
+public:
+    void RegisterNewSocketRecvCallback(callback_recv_t callback);
+    virtual SocketBase* OnSocketAccept(int32_t cli_fd, std::string remote_ip, uint16_t remote_port);
 
 protected:
     int32_t CreateSocket();
     int32_t MakeSocketNonBlock(int32_t fd);
     int32_t Listen(int32_t listenfd);
-    void OnSocketAccept();
     void Close();
+    void ClearConnections();
+    SocketBase* RecordNewConnection(SocketBase* new_sock);
 
 
 private:
     std::string local_ip_;
     uint16_t local_port_ { 0 };
     int32_t handle_ { -1 }; // listenfd
-    std::weak_ptr<EventTrigger> evt_trigger_;
+    std::mutex connection_vec_mutex_;
+    std::vector<SocketBase*> connection_vec_;
+    callback_recv_t new_socket_recv_callback_;
 };
 
 

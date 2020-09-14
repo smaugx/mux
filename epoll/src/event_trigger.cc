@@ -23,29 +23,21 @@ namespace transport {
 
 EventTrigger::EventTrigger() {}
 
-EventTrigger::EventTrigger(int32_t handle, int ep_num)
-    : handle_(handle),
-      ep_num_(ep_num) {}
+EventTrigger::EventTrigger(int ep_num)
+    : ep_num_(ep_num) {}
 
 EventTrigger::~EventTrigger() {
     Stop();
 }
 
 bool EventTrigger::Start() {
-    if (handle_ != -1) {
-        for (int i = 0; i < ep_num_; ++i) {
-            auto epoll_reactor = std::make_shared<EpollReactor>(i, handle_);
-            assert(epoll_reactor);
-            epoll_reactor->Start();
-            reactor_vec_.push_back(epoll_reactor);
-        }
-    } else {
-        auto epoll_reactor = std::make_shared<EpollReactor>();
+    for (int i = 0; i < ep_num_; ++i) {
+        auto epoll_reactor = std::make_shared<EpollReactor>(i);
         assert(epoll_reactor);
         epoll_reactor->Start();
         reactor_vec_.push_back(epoll_reactor);
-        // TODO(smaug) add to epoll tree
     }
+    // and then register fd to epoll tree
 }
 
 bool EventTrigger::Stop() {
@@ -55,6 +47,7 @@ bool EventTrigger::Stop() {
         MUX_DEBUG("stop reactor:{0}", i);
         ++i;
     }
+    reactor_vec_.clear();
 }
 
 
@@ -65,6 +58,17 @@ void EventTrigger::RegisterOnAcceptCallback(callback_accept_t callback) {
         MUX_DEBUG("register accept callback reactor:{0}", i);
         ++i;
     }
+}
+
+
+int32_t EventTrigger::RegisterDescriptor(void* ptr, int events) {
+    int i = 0;
+    for (const auto& reactor : reactor_vec_) {
+        reactor->RegisterDescriptor(ptr, events);
+        MUX_DEBUG("register descriptor to reactor:{0}", i);
+        ++i;
+    }
+    return 0;
 }
 
 

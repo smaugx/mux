@@ -6,7 +6,8 @@
 #include <memory>
 #include <functional>
 
-#include "mbase/packet.h"
+#include "mbase/include/packet.h"
+#include "mbase/include/runnable.h"
 
 namespace mux {
 
@@ -17,10 +18,7 @@ static const int32_t READ_EVENT  = 0;
 static const int32_t WRITE_EVENT = 1;
 
 
-using callback_recv_t    = std::function<void(transport::PacketPtr&)>;
-using callback_accept_t  = std::function<void(uint32_t eid)>;
-
-class SocketBase {
+class SocketBase : public RunEntity {
 public:
     SocketBase(const SocketBase&)              = delete;
     SocketBase& operator=(const SocketBase&)   = delete;
@@ -29,20 +27,11 @@ public:
 
     SocketBase()                               = default;
     virtual ~SocketBase()                      = default;
-
 public:
-    virtual void HandleRead()                           = 0;
-    virtual void HandleWrite()                          = 0;
-    virtual void HandleError()                          = 0;
-    virtual int32_t SendData(const std::string& data)   = 0;
-    virtual int32_t SendData(const PacketPtr& packet)   = 0;
-    virtual void Close()                                = 0;
     virtual std::string GetLocalIp()                    = 0;
     virtual uint16_t GetLocalPort()                     = 0;
-    virtual std::string GetRemoteIp()                   = 0;
-    virtual uint16_t GetRemotePort()                    = 0;
     virtual int32_t GetDescriptor()                     = 0;
-
+    virtual bool CheckListener()                        = 0;
 };
 
 
@@ -53,18 +42,48 @@ public:
     BasicSocket(BasicSocket&&)                   = delete;
     BasicSocket& operator=(BasicSocket&&)        = delete;
 
+    BasicSocket()                                = default;
+    virtual ~BasicSocket()                       = default;
+
 public:
-    BasicSocket();
-    BasicSocket(int fd); // for server listen
-    BasicSocket(
+    virtual void HandleRead()                           = 0;
+    virtual void HandleWrite()                          = 0;
+    virtual void HandleError()                          = 0;
+    virtual int32_t SendData(const std::string& data)   = 0;
+    virtual int32_t SendData(const PacketPtr& packet)   = 0;
+    virtual void Close()                                = 0;
+    virtual std::string GetRemoteIp()                   = 0;
+    virtual uint16_t GetRemotePort()                    = 0;
+
+};
+
+
+class MuxSocket : public BasicSocket {
+public:
+    MuxSocket(const MuxSocket&)              = delete;
+    MuxSocket& operator=(const MuxSocket&)   = delete;
+    MuxSocket(MuxSocket&&)                   = delete;
+    MuxSocket& operator=(MuxSocket&&)        = delete;
+
+public:
+    MuxSocket(
             int fd,
             const std::string& local_ip,
             uint16_t local_port,
             const std::string& remote_ip,
             uint16_t remote_port);
-    virtual ~BasicSocket();
+    virtual ~MuxSocket();
 
 public:
+    bool Start() override {
+        return true;
+    }
+
+    bool Stop() override {
+        Close();
+        return true;
+    }
+
     void HandleRead() override;
     void HandleWrite() override;
     void HandleError() override;
@@ -92,6 +111,11 @@ public:
         return fd_;
     }
 
+    inline bool CheckListener() override {
+        return false;
+    }
+    virtual void RegisterOnRecvCallback(callback_recv_t callback);
+
 protected:
     // handle recv data, rewrite this function of yourself
     virtual int32_t HandleRecvData(const PacketPtr& packet);
@@ -103,6 +127,7 @@ private:
     std::string remote_ip_;
     uint16_t remote_port_ { 0 };
     bool closed_ { true };
+    callback_recv_t callback_;
 
 };
 
