@@ -7,9 +7,9 @@ import sys
 Import('env')
 project_dir  = env['MUX_DIR']
 
-epoll_lib  = 'epoll'
+epoll_lib  = 'muxsocket'
 
-epoll_src_path = os.path.join(project_dir, 'epoll/src')
+epoll_src_path = os.path.join(project_dir, 'socket/src')
 epoll_sources = []
 for item in os.listdir(epoll_src_path):
     if item.endswith('.cc') or item.endswith('.cpp') or item.endswith('.cxx'):

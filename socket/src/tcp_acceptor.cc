@@ -1,4 +1,4 @@
-#include "epoll/include/tcp_acceptor.h"
+#include "socket/include/tcp_acceptor.h"
 
 #include <arpa/inet.h>
 #include <errno.h>
@@ -16,7 +16,7 @@
 #include <iostream>
 
 #include "mbase/include/mux_log.h"
-#include "epoll/include/socket_imp.h"
+#include "socket/include/socket_imp.h"
 
 namespace mux {
 

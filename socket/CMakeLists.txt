@@ -1,7 +1,7 @@
-# keep all cpp files in varibale ${epoll_src}
-aux_source_directory(./src epoll_src)
+# keep all cpp files in varibale ${socket_src}
+aux_source_directory(./src socket_src)
 
-add_library(epoll STATIC ${epoll_src})
+add_library(muxsocket STATIC ${socket_src})
 
-add_dependencies(epoll mbase )
-target_link_libraries(epoll mbase pthread)
+add_dependencies(muxsocket mbase)
+target_link_libraries(muxsocket mbase pthread)
