@@ -55,9 +55,9 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})  # current CMakeLists.txt dir (
 link_directories(${CMAKE_SOURCE_DIR}/third-party/lib)
 link_directories(${LIBRARY_OUTPUT_PATH})  # generate in building
 
-#add_subdirectory(demo/bench)
+add_subdirectory(demo/bench)
 add_subdirectory(demo/echo)
-add_subdirectory(epoll)
+add_subdirectory(socket)
 add_subdirectory(mbase)
 add_subdirectory(message_handle)
 #add_subdirectory(transport)
