@@ -9,6 +9,8 @@ namespace mux {
 namespace transport {
 class Packet;
 using PacketPtr = std::shared_ptr<Packet>;
+
+class BasicSocket;
 }
 
 
@@ -18,6 +20,6 @@ static const uint32_t kMaxPacketPriority = 3;
 
 
 using callback_recv_t    = std::function<void(transport::PacketPtr&)>;
-using callback_accept_t  = std::function<void(int32_t, const std::string&, uint16_t)>;
+using callback_accept_t  = std::function<transport::BasicSocket*(int32_t, const std::string&, uint16_t)>;
 
 }

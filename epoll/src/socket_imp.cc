@@ -1,4 +1,5 @@
 #include "epoll/include/socket_imp.h"
+#include "mbase/include/mux_log.h"
 
 namespace mux {
 
@@ -16,14 +17,23 @@ MuxSocket::MuxSocket(
       remote_ip_(remote_ip),
       remote_port_(remote_port),
       closed_(false) {
-    MUX_INFO("create socket(0) local {1}:{2} remote {3}:{4}", fd_, local_ip_, local_port_, remote_ip_, remote_port_);
+    MUX_INFO("create socket{0} local {1}:{2} remote {3}:{4}", fd_, local_ip_, local_port_, remote_ip_, remote_port_);
+}
+
+MuxSocket::MuxSocket(
+        const std::string& remote_ip,
+        uint16_t remote_port)
+    : remote_ip_(remote_ip),
+      remote_port_(remote_port),
+      closed_(true) {
+    MUX_INFO("client create socket{0} local {1}:{2} remote {3}:{4}", fd_, local_ip_, local_port_, remote_ip_, remote_port_);
 }
 
 MuxSocket::~MuxSocket() {
     Close();
 }
 
-void MuxSocket::handle_read() {
+void MuxSocket::HandleRead() {
     char read_buf[4096];
     bzero(read_buf, sizeof(read_buf));
     int n = -1;
@@ -60,12 +70,12 @@ void MuxSocket::handle_read() {
     return;
 }
 
-void MuxSocket::handle_write() {
+void MuxSocket::HandleWrite() {
     // TODO(smaug)
     MUX_INFO("handle write(TODO)");
 }
 
-void MuxSocket::handle_error() {
+void MuxSocket::HandleError() {
     Close();
 }
 
@@ -83,10 +93,10 @@ int32_t MuxSocket::SendData(const PacketPtr& packet) {
         MUX_ERROR("socket closed, not ready for send");
         return -1;
     }
-    int r = ::write(fd_, packet->msg_.data(), packet->msg_.size());
+    int r = ::write(fd_, packet->msg.data(), packet->msg.size());
     if (r == -1) {
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
-            MUX_INFO("send {0} bytes finished", packet->msg_.size());
+            MUX_INFO("send {0} bytes finished", packet->msg.size());
             return -1;
         }
         // error happend
@@ -111,10 +121,11 @@ void MuxSocket::Close() {
 int32_t MuxSocket::HandleRecvData(const PacketPtr& packet) {
     // handle recv here
     MUX_DEBUG("handle recv data");
-    MUX_INFO("recv packet size:{0} content:{1}", (packet->msg_).size(), packet->msg_);
+    MUX_INFO("recv packet size:{0} content:{1}", (packet->msg).size(), packet->msg);
+    return 0;
 }
 
-void MuxSocket::RegisterOnRecvCallback(callback_accept_t callback) {
+void MuxSocket::RegisterOnRecvCallback(callback_recv_t callback) {
     if (callback_) {
         return;
     }

@@ -6,7 +6,7 @@ namespace mux {
 
 namespace echo {
 
-class EchoSocket : public MuxSocket {
+class EchoSocket : public transport::MuxSocket {
 public:
     EchoSocket(
             int fd,
@@ -15,8 +15,6 @@ public:
             const std::string& remote_ip,
             uint16_t remote_port);
     virtual ~EchoSocket() = default;
-protected:
-    int32_t HandleRecvData(const PacketPtr& packet) override;
 };
 
 } // end namespace echo

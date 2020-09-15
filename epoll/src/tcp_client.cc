@@ -26,9 +26,7 @@ static const uint32_t kEpollWaitTime = 10; // 10 ms
 static const uint32_t kMaxEvents = 100;
 
 TcpClient::TcpClient(const std::string& server_ip, uint16_t server_port)
-    : remote_ip_{ server_ip },
-      remote_port_{ server_port } {
-}
+    : MuxSocket(server_ip, server_port) {}
 
 TcpClient::~TcpClient() {
     Stop();
@@ -104,9 +102,12 @@ int32_t TcpClient::MakeSocketNonBlock(int32_t fd) {
     return 0;
 }
 
+/*
 int32_t TcpClient::HandleRecvData(const PacketPtr& packet) {
     MUX_DEBUG("in TcpClient::HandleRecvData");
+    return 0;
 }
+*/
 
 
 } // end namespace transport

@@ -1,7 +1,7 @@
 #include "message_handle/include/message_handler.h"
 
-#include "mbase/packet.h"
-#include "mbase/mux_log.h"
+#include "mbase/include/packet.h"
+#include "mbase/include/mux_log.h"
 
 
 namespace mux {
@@ -146,8 +146,8 @@ void MessageHandler::HandleMessage(PacketPtr& packet) {
         return;
     }
     uint32_t packet_priority = kMaxPacketPriority; // the lowest priority
-    if (packet->priority_ < kMaxPacketPriority) {
-        packet_priority = packet->priority_;
+    if (packet->priority < kMaxPacketPriority) {
+        packet_priority = packet->priority;
     }
 
     {

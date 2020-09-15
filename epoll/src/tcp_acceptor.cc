@@ -60,6 +60,7 @@ bool TcpAcceptor::Stop() {
     Close();
     ClearConnections();
     MUX_INFO("TcpAcceptor Stop OK");
+    return true;
 }
 
 void TcpAcceptor::Close() {
@@ -133,7 +134,7 @@ void TcpAcceptor::RegisterNewSocketRecvCallback(callback_recv_t callback) {
     new_socket_recv_callback_ = callback;
 }
 
-SocketBase* TcpAcceptor::RecordNewConnection(SocketBase* new_sock) {
+BasicSocket* TcpAcceptor::ManageNewConnection(BasicSocket* new_sock) {
     if (new_socket_recv_callback_) {
         new_sock->RegisterOnRecvCallback(new_socket_recv_callback_);
     } else {
@@ -149,8 +150,8 @@ SocketBase* TcpAcceptor::RecordNewConnection(SocketBase* new_sock) {
     return new_sock;
 }
 
-SocketBase* TcpAcceptor::OnSocketAccept(int32_t cli_fd, std::string remote_ip, uint16_t remote_port) {
-    SocketBase* new_sock = new MuxSocket(cli_fd, local_ip_, local_port_, remote_ip, remote_port);
+BasicSocket* TcpAcceptor::OnSocketAccept(int32_t cli_fd, const std::string& remote_ip, uint16_t remote_port) {
+    BasicSocket* new_sock = new MuxSocket(cli_fd, local_ip_, local_port_, remote_ip, remote_port);
     if (!new_sock) {
         MUX_ERROR("error create muxsocket");
         return nullptr;
@@ -159,7 +160,7 @@ SocketBase* TcpAcceptor::OnSocketAccept(int32_t cli_fd, std::string remote_ip, u
     // handle your session here
     
 
-    return RecordNewConnection(new_sock);
+    return ManageNewConnection(new_sock);
 }
 
 

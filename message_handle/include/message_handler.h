@@ -12,7 +12,7 @@
 #include <condition_variable>
 #include <queue>
 
-#include "mbase/packet.h"
+#include "mbase/include/packet.h"
 
 namespace mux {
 

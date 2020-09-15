@@ -25,7 +25,7 @@ public:
     bool Start() override;
 
 protected:
-    int32_t HandleRecvData(const PacketPtr& packet) override;
+    //int32_t HandleRecvData(const PacketPtr& packet) override;
 
 protected:
     int32_t CreateSocket();

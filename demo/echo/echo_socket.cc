@@ -14,12 +14,6 @@ EchoSocket::EchoSocket(
     : MuxSocket(fd, local_ip, local_port, remote_ip, remote_port) {
 }
 
-
-int32_t EchoSocket::HandleRecvData(const PacketPtr& packet) {
-    MUX_DEBUG("EchoSocket recv:{0}", packet->msg_);
-}
-
-
 } // end namespace echo
 
 } // end namespace mux

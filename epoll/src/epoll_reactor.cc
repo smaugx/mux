@@ -15,7 +15,7 @@
 
 #include <iostream>
 
-#include "mbase/mux_log.h"
+#include "mbase/include/mux_log.h"
 
 namespace mux {
 
@@ -26,7 +26,7 @@ static const uint32_t kMaxEvents = 100;
 
 EpollReactor::EpollReactor() {
     int r = CreateEpoll();
-    assert(r>=0);
+    assert(r >= 0);
 }
 
 EpollReactor::EpollReactor(uint32_t eid)
@@ -91,7 +91,10 @@ int32_t EpollReactor::MakeSocketNonBlock(int32_t fd) {
     return 0;
 }
 
-int32_t EpollReactor::RegisterDescriptor(void* ptr, int fd, int events) {
+int32_t EpollReactor::RegisterDescriptor(void* ptr, int events) {
+    SocketBase* sock = static_cast<SocketBase*>(ptr);
+    int fd = sock->GetDescriptor();
+    MUX_INFO("RegisterDescriptor fd:{0}", fd);
     return UpdateEpollEvents(efd_, EPOLL_CTL_ADD, fd, events, ptr);
 }
 
@@ -116,7 +119,7 @@ void EpollReactor::RegisterOnAcceptCallback(callback_accept_t callback) {
 
 // only for server, client will never generate accept-event
 void EpollReactor::OnSocketAccept(void* ptr) {
-    SocketBase* sock = dynamic_cast<SocketBase*>(ptr);
+    SocketBase* sock = static_cast<SocketBase*>(ptr);
     int32_t handle = sock->GetDescriptor();
     // epoll working on et mode, must read all coming data
     while (true) {
@@ -157,13 +160,13 @@ void EpollReactor::OnSocketAccept(void* ptr) {
             continue;
         }
 
-        SocketBase* new_sock = accept_callback_(cli_fd, remote_ip, remote_port);
+        BasicSocket* new_sock = accept_callback_(cli_fd, remote_ip, remote_port);
         if (!new_sock) {
             MUX_ERROR("error create muxsocket");
             ::close(cli_fd);
             continue;
         }
-        int rd = RegisterDescriptor((void*)new_sock, cli_fd);
+        int rd = RegisterDescriptor((void*)new_sock);
         if (rd < 0 ) {
             new_sock->Close();
         }
@@ -172,18 +175,18 @@ void EpollReactor::OnSocketAccept(void* ptr) {
 
 // handle read events on fd
 void EpollReactor::OnSocketRead(void* ptr) {
-    BasicSocket* sock = dynamic_cast<BasicSocket*>(ptr);
+    BasicSocket* sock = static_cast<BasicSocket*>(ptr);
     sock->HandleRead();
 }
 
 // handle write events on fd (usually happens when sending big files)
 void EpollReactor::OnSocketWrite(void* ptr) {
-    BasicSocket* sock = dynamic_cast<BasicSocket*>(ptr);
+    BasicSocket* sock = static_cast<BasicSocket*>(ptr);
     sock->HandleWrite();
 }
 
 void EpollReactor::OnSocketError(void* ptr) {
-    BasicSocket* sock = dynamic_cast<BasicSocket*>(ptr);
+    BasicSocket* sock = static_cast<BasicSocket*>(ptr);
     sock->HandleError();
 }
 
@@ -212,7 +215,7 @@ void EpollReactor::EpollLoop() {
                 OnSocketError(ptr);
             } else if ( events & EPOLLIN ) {
                 MUX_DEBUG("epollin");
-                SocketBase* sock = dynamic_cast<SocketBase*>(ptr);
+                SocketBase* sock = static_cast<SocketBase*>(ptr);
                 if (sock->CheckListener()) {
                     // listen fd coming connections
                     OnSocketAccept(ptr);

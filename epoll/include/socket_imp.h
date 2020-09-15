@@ -32,6 +32,7 @@ public:
     virtual uint16_t GetLocalPort()                     = 0;
     virtual int32_t GetDescriptor()                     = 0;
     virtual bool CheckListener()                        = 0;
+    virtual void Close()                                = 0;
 };
 
 
@@ -46,15 +47,14 @@ public:
     virtual ~BasicSocket()                       = default;
 
 public:
-    virtual void HandleRead()                           = 0;
-    virtual void HandleWrite()                          = 0;
-    virtual void HandleError()                          = 0;
-    virtual int32_t SendData(const std::string& data)   = 0;
-    virtual int32_t SendData(const PacketPtr& packet)   = 0;
-    virtual void Close()                                = 0;
-    virtual std::string GetRemoteIp()                   = 0;
-    virtual uint16_t GetRemotePort()                    = 0;
-
+    virtual void HandleRead()                                     = 0;
+    virtual void HandleWrite()                                    = 0;
+    virtual void HandleError()                                    = 0;
+    virtual int32_t SendData(const std::string& data)             = 0;
+    virtual int32_t SendData(const PacketPtr& packet)             = 0;
+    virtual std::string GetRemoteIp()                             = 0;
+    virtual uint16_t GetRemotePort()                              = 0;
+    virtual void RegisterOnRecvCallback(callback_recv_t callback) = 0;
 };
 
 
@@ -72,6 +72,7 @@ public:
             uint16_t local_port,
             const std::string& remote_ip,
             uint16_t remote_port);
+    MuxSocket(const std::string& remote_ip, uint16_t remote_port);
     virtual ~MuxSocket();
 
 public:
@@ -114,13 +115,13 @@ public:
     inline bool CheckListener() override {
         return false;
     }
-    virtual void RegisterOnRecvCallback(callback_recv_t callback);
+    void RegisterOnRecvCallback(callback_recv_t callback) override;
 
 protected:
     // handle recv data, rewrite this function of yourself
     virtual int32_t HandleRecvData(const PacketPtr& packet);
 
-private:
+protected:
     int fd_ { -1 };
     std::string local_ip_;
     uint16_t local_port_ { 0 };
@@ -128,7 +129,6 @@ private:
     uint16_t remote_port_ { 0 };
     bool closed_ { true };
     callback_recv_t callback_;
-
 };
 
 } // end namespace transport

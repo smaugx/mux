@@ -15,7 +15,7 @@
 
 #include <iostream>
 
-#include "mbase/mux_log.h"
+#include "mbase/include/mux_log.h"
 
 namespace mux {
 
@@ -38,6 +38,8 @@ bool EventTrigger::Start() {
         reactor_vec_.push_back(epoll_reactor);
     }
     // and then register fd to epoll tree
+    MUX_INFO("start {0} reactor", ep_num_);
+    return true;
 }
 
 bool EventTrigger::Stop() {
@@ -48,6 +50,7 @@ bool EventTrigger::Stop() {
         ++i;
     }
     reactor_vec_.clear();
+    return true;
 }
 
 
@@ -64,7 +67,7 @@ void EventTrigger::RegisterOnAcceptCallback(callback_accept_t callback) {
 int32_t EventTrigger::RegisterDescriptor(void* ptr, int events) {
     int i = 0;
     for (const auto& reactor : reactor_vec_) {
-        reactor->RegisterDescriptor(ptr, events);
+        reactor->RegisterDescriptor(ptr,  events);
         MUX_DEBUG("register descriptor to reactor:{0}", i);
         ++i;
     }

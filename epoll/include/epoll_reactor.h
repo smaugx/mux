@@ -1,5 +1,8 @@
 #pragma once
 
+#include <sys/epoll.h>
+#include <sys/socket.h>
+
 #include <string>
 #include <memory>
 #include <thread>
@@ -28,7 +31,7 @@ public:
 
 public:
     void RegisterOnAcceptCallback(callback_accept_t callback);
-    int32_t RegisterDescriptor(void* ptr, int fd, int events = EPOLLIN | EPOLLOUT| EPOLLRDHUP | EPOLLET);
+    int32_t RegisterDescriptor(void* ptr, int events = EPOLLIN | EPOLLOUT| EPOLLRDHUP | EPOLLET);
 
 protected:
     int32_t CreateEpoll();

@@ -7,6 +7,7 @@
 
 #include "echo_client.h"
 #include "mbase/include/mux_log.h"
+#include "epoll/include/event_trigger.h"
 
 
 using namespace mux;
@@ -38,7 +39,7 @@ int main(int argc, char* argv[]) {
 
     auto recv_call = [](const transport::PacketPtr& packet) -> void {
         ::write(1, "\nrecv:", 6);
-        ::write(1, packet->msg_.data(), packet->msg_.size());
+        ::write(1, packet->msg.data(), packet->msg.size());
         ::write(1, "\n", 1);
         return;
     };
@@ -47,7 +48,7 @@ int main(int argc, char* argv[]) {
 
     // create and init EventTrigger
     int ep_num = 1;
-    std::shared_ptr<EventTrigger> event_trigger = std::make_shared<EventTrigger>(ep_num);
+    std::shared_ptr<transport::EventTrigger> event_trigger = std::make_shared<transport::EventTrigger>(ep_num);
     event_trigger->RegisterDescriptor((void*)tcp_client);
 
     if (!tcp_client->Start()) {
@@ -75,11 +76,13 @@ int main(int argc, char* argv[]) {
     while (true) {
         std::cout << std::endl<<  "input:";
         auto packet = std::make_shared<transport::Packet>();
-        std::getline(std::cin, packet->msg_);
-        MUX_DEBUG("send {0}", packet->msg_);
+        std::getline(std::cin, packet->msg);
+        MUX_DEBUG("send {0}", packet->msg);
         tcp_client->SendData(packet);
         //std::this_thread::sleep_for(std::chrono::seconds(1));
     }
+
+    delete tcp_client;
 
     return 0;
 }

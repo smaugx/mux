@@ -4,7 +4,6 @@
 #include <iostream>
 
 #include "echo_tcp_acceptor.h"
-#include "echo_socket.h"
 
 #include "message_handle/include/message_handler.h"
 #include "mbase/include/mux_log.h"
@@ -33,7 +32,7 @@ int main(int argc, char* argv[]) {
     }
 
     auto recv_call = [&](const transport::PacketPtr& packet) -> void {
-        std::cout << "recv packet:" << packet->msg_ << std::endl;
+        std::cout << "recv packet:" << packet->msg << std::endl;
         //tcp_echo_server->SendData(packet);
         return;
     };
@@ -59,12 +58,10 @@ int main(int argc, char* argv[]) {
 
     // create and init EventTrigger
     int ep_num = 1;
-    std::shared_ptr<EventTrigger> event_trigger = std::make_shared<EventTrigger>(ep_num);
-    auto accept_callback = [&](int32_t cli_fd, const std::string& remote_ip, uint16_t remote_port) -> SocketBase* {
+    std::shared_ptr<transport::EventTrigger> event_trigger = std::make_shared<transport::EventTrigger>(ep_num);
+    auto accept_callback = [&](int32_t cli_fd, const std::string& remote_ip, uint16_t remote_port) -> transport::BasicSocket* {
         return echo_tcp_acceptor->OnSocketAccept(cli_fd, remote_ip, remote_port);
     };
-    event_trigger->RegisterOnAcceptCallback(accept_callback);
-    event_trigger->RegisterDescriptor((void*)echo_tcp_acceptor);
     event_trigger->Start();
 
     if (!echo_tcp_acceptor->Start()) {
@@ -73,12 +70,18 @@ int main(int argc, char* argv[]) {
         exit(1);
     }
 
-    std::cout << "############tcp_echo_server[" << tcp_echo_server->GetLocalIp() << ":" << tcp_echo_server->GetLocalPort()  << "] started!################\n" << std::endl;
+    // attention: RegisterDescriptor must after Start
+    event_trigger->RegisterOnAcceptCallback(accept_callback);
+    event_trigger->RegisterDescriptor((void*)echo_tcp_acceptor);
+
+    std::cout << "############tcp_echo_server[" << echo_tcp_acceptor->GetLocalIp() << ":" << echo_tcp_acceptor->GetLocalPort()  << "] started!################\n" << std::endl;
     MUX_INFO("############tcp_echo_server [{0}:{1}] started!################", local_ip, local_port);
 
     while (true) {
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
+
+    delete echo_tcp_acceptor;
 
     return 0;
 }

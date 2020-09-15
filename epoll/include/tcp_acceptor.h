@@ -45,26 +45,26 @@ public:
     inline bool CheckListener() override {
         return true;
     }
+    void Close() override;
 
 public:
     void RegisterNewSocketRecvCallback(callback_recv_t callback);
-    virtual SocketBase* OnSocketAccept(int32_t cli_fd, std::string remote_ip, uint16_t remote_port);
+    virtual BasicSocket* OnSocketAccept(int32_t cli_fd, const std::string& remote_ip, uint16_t remote_port);
 
 protected:
     int32_t CreateSocket();
     int32_t MakeSocketNonBlock(int32_t fd);
     int32_t Listen(int32_t listenfd);
-    void Close();
     void ClearConnections();
-    SocketBase* RecordNewConnection(SocketBase* new_sock);
+    BasicSocket* ManageNewConnection(BasicSocket* new_sock);
 
 
-private:
+protected:
     std::string local_ip_;
     uint16_t local_port_ { 0 };
     int32_t handle_ { -1 }; // listenfd
     std::mutex connection_vec_mutex_;
-    std::vector<SocketBase*> connection_vec_;
+    std::vector<BasicSocket*> connection_vec_;
     callback_recv_t new_socket_recv_callback_;
 };
 
