@@ -7,17 +7,17 @@ import sys
 Import('env')
 project_dir  = env['MUX_DIR']
 
-epoll_lib  = 'muxsocket'
+socket_lib = 'muxsocket'
 
-epoll_src_path = os.path.join(project_dir, 'socket/src')
-epoll_sources = []
-for item in os.listdir(epoll_src_path):
+socket_src_path = os.path.join(project_dir, 'socket/src')
+socket_sources = []
+for item in os.listdir(socket_src_path):
     if item.endswith('.cc') or item.endswith('.cpp') or item.endswith('.cxx'):
-        abs_item = os.path.join(epoll_src_path, item)
-        epoll_sources.append(abs_item)
+        abs_item = os.path.join(socket_src_path, item)
+        socket_sources.append(abs_item)
 
-print('\nbuild target:lib{0}.a'.format(epoll_lib))
-print(epoll_sources)
+print('\nbuild target:lib{0}.a'.format(socket_lib))
+print(socket_sources)
 
 lib_dir = os.path.join(env['build_dir'], 'lib')
 
@@ -25,10 +25,10 @@ link_libraries = ['mbase']
 for lib_name in link_libraries:
     lib_name = "{0}{1}{2}".format(env['LIBPREFIX'], lib_name, env['LIBSUFFIX'])
     abs_lib_name = os.path.join(lib_dir, lib_name)
-    epoll_sources.append(abs_lib_name)
+    socket_sources.append(abs_lib_name)
 
-env.StaticLibrary(target = os.path.join(lib_dir, epoll_lib),
-        source  = epoll_sources,
+env.StaticLibrary(target = os.path.join(lib_dir, socket_lib),
+        source  = socket_sources,
         CPPPATH = env['headers'], # include
         LIBPATH = env['libs'],    # lib path
         LIBS    = ['pthread'],    # link lib

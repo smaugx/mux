@@ -10,8 +10,8 @@ Import('env')
 echo_server_bin = 'echo_server'
 client_bin = 'echo_client'
 
-echo_server_sources = ['echo_server.cc']
-client_sources = ['client.cc']
+echo_server_sources = ['server.cc', 'echo_socket.cc', 'echo_tcp_acceptor.cc']
+client_sources = ['client.cc', 'echo_client.cc', 'echo_socket.cc']
 
 project_dir  = env['MUX_DIR']
 
@@ -26,7 +26,7 @@ env.Program(target = os.path.join(bin_dir, echo_server_bin),
         source  = echo_server_sources,
         CPPPATH = env['headers'],
         LIBPATH = env['libs'],
-        LIBS    = ['transport','msghandler','epoll', 'mbase', 'pthread'],
+        LIBS    = ['msghandler','muxsocket', 'mbase', 'pthread'],
         CCFLAGS = env['ccflags']
         )
 
@@ -35,6 +35,6 @@ env.Program(target = os.path.join(bin_dir, client_bin),
         source  = client_sources,
         CPPPATH = env['headers'],
         LIBPATH = env['libs'],
-        LIBS    = ['transport','msghandler','epoll', 'mbase', 'pthread'],
+        LIBS    = ['msghandler','muxsocket', 'mbase', 'pthread'],
         CCFLAGS = env['ccflags']
         )
