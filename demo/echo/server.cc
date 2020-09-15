@@ -31,9 +31,22 @@ int main(int argc, char* argv[]) {
         local_port = std::atoi(argv[2]);
     }
 
+    // create and init TcpAcceptor
+    echo::EchoTcpAcceptor* echo_tcp_acceptor = new echo::EchoTcpAcceptor(local_ip, local_port);
+    if (!echo_tcp_acceptor) {
+        MUX_ERROR("echo_tcp_acceptor create failed");
+        std::cout << "echo_tcp_acceptor create failed" << std::endl;
+        exit(-1);
+    }
+
     auto recv_call = [&](const transport::PacketPtr& packet) -> void {
-        std::cout << "recv packet:" << packet->msg << std::endl;
-        //tcp_echo_server->SendData(packet);
+        auto key = packet->from_ip_addr + ":" + std::to_string(packet->from_ip_port);
+        auto sock = echo_tcp_acceptor->FindSession(key);
+        if (!sock) {
+            MUX_WARN("not found session:{0}", key);
+            return;
+        }
+        sock->SendData(packet);
         return;
     };
 
@@ -44,14 +57,6 @@ int main(int argc, char* argv[]) {
         return msg_handle->HandleMessage(packet);
     };
 
-
-    // create and init TcpAcceptor
-    echo::EchoTcpAcceptor* echo_tcp_acceptor = new echo::EchoTcpAcceptor(local_ip, local_port);
-    if (!echo_tcp_acceptor) {
-        MUX_ERROR("echo_tcp_acceptor create failed");
-        std::cout << "echo_tcp_acceptor create failed" << std::endl;
-        exit(-1);
-    }
 
     echo_tcp_acceptor->RegisterNewSocketRecvCallback(dispath_call);
 

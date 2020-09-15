@@ -23,7 +23,27 @@ transport::BasicSocket* EchoTcpAcceptor::OnSocketAccept(int32_t cli_fd, const st
         return nullptr;
     }
 
+    {
+        std::unique_lock<std::mutex> lock(session_mutex_);
+        std::string key = remote_ip + ":" + std::to_string(remote_port);
+        session_[key] = new_sock;
+        MUX_DEBUG("add new connection {0}, now size:{1}", key, session_.size());
+    }
+
     return transport::TcpAcceptor::ManageNewConnection(new_sock);
+}
+
+
+transport::BasicSocket* EchoTcpAcceptor::FindSession(const std::string& ip_port) {
+    {
+        std::unique_lock<std::mutex> lock(session_mutex_);
+        auto ifind = session_.find(ip_port);
+        if (ifind == session_.end()) {
+            return nullptr;
+        } else {
+            return ifind->second;
+        }
+    }
 }
 
 } // end namespace echo

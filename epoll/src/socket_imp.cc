@@ -42,6 +42,8 @@ void MuxSocket::HandleRead() {
         MUX_DEBUG("recv_size:{0} from fd:{1}", n, fd_);
         std::string msg(read_buf, n);
         PacketPtr packet = std::make_shared<Packet>(msg);
+        packet->from_ip_addr = remote_ip_;
+        packet->from_ip_port = remote_port_;
         // finally handle recv data
         //HandleRecvData(packet);
 

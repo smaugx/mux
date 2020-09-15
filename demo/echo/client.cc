@@ -49,17 +49,18 @@ int main(int argc, char* argv[]) {
     // create and init EventTrigger
     int ep_num = 1;
     std::shared_ptr<transport::EventTrigger> event_trigger = std::make_shared<transport::EventTrigger>(ep_num);
-    event_trigger->RegisterDescriptor((void*)tcp_client);
+    event_trigger->Start();
 
     if (!tcp_client->Start()) {
         std::cout << "tcp_client start failed!" << std::endl;
         MUX_ERROR("tcp_client start failed!");
         exit(1);
     }
+
+    event_trigger->RegisterDescriptor((void*)tcp_client);
     std::cout << "############tcp_client started! connected to ["<< server_ip << ":" << server_port << "] ################\n" << std::endl;
     MUX_INFO("############tcp_client started!################");
 
-    event_trigger->Start();
 
     /*
     uint32_t send_total = 1000000;
@@ -76,7 +77,12 @@ int main(int argc, char* argv[]) {
     while (true) {
         std::cout << std::endl<<  "input:";
         auto packet = std::make_shared<transport::Packet>();
-        std::getline(std::cin, packet->msg);
+        std::string msg;
+        std::getline(std::cin, msg);
+        if (msg.compare("q") == 0 || msg.compare("quit") == 0 || msg.compare("exit") == 0) {
+            break;
+        }
+        packet->msg = msg;
         MUX_DEBUG("send {0}", packet->msg);
         tcp_client->SendData(packet);
         //std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -84,5 +90,6 @@ int main(int argc, char* argv[]) {
 
     delete tcp_client;
 
+    std::this_thread::sleep_for(std::chrono::seconds(1));
     return 0;
 }

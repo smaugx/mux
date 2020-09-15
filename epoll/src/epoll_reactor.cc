@@ -234,6 +234,8 @@ void EpollReactor::EpollLoop() {
         } // end for (int i = 0; ...
 
     } // end while (!shutdown_flag_)
+
+    MUX_INFO("shutdown_flag:{0} will shutdown epoll_reactor", shutdown_flag_);
     delete []alive_events;
 }
 

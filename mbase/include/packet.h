@@ -17,6 +17,10 @@ public:
 
     uint32_t priority {kMaxPacketPriority}; // default is the lowest priority
     std::string msg;
+    std::string from_ip_addr;
+    uint16_t    from_ip_port { 0 };
+    std::string to_ip_addr;
+    uint16_t    to_ip_port { 0 };
 } Packet;
 
 typedef std::shared_ptr<Packet> PacketPtr;

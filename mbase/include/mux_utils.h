@@ -7,7 +7,7 @@
 namespace mux {
 
 namespace transport {
-class Packet;
+struct Packet;
 using PacketPtr = std::shared_ptr<Packet>;
 
 class BasicSocket;
