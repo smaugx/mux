@@ -74,8 +74,6 @@ public:
     void RegisterOnDispatchCallback(callback_recv_t callback);
     void UnRegisterOnDispatchCallback();
     void Init();
-
-private:
     void Join();
 
 private:

@@ -44,7 +44,8 @@ bool EpollReactor::Start() {
     MUX_DEBUG("set epollreactor shutdown_flag {0}", shutdown_flag_);
 
     assert(!th_loop_);
-    th_loop_ = std::make_shared<std::thread>(&EpollReactor::EpollLoop, this);
+    auto self(shared_from_this());
+    th_loop_ = std::make_shared<std::thread>(&EpollReactor::EpollLoop, self);
     if (!th_loop_) {
         MUX_ERROR("create thread for epollloop failed");
         return false;
@@ -236,7 +237,7 @@ void EpollReactor::EpollLoop() {
     } // end while (!shutdown_flag_)
 
     MUX_INFO("shutdown_flag:{0} will shutdown epoll_reactor", shutdown_flag_);
-    delete []alive_events;
+    free(alive_events);
 }
 
 } // end namespace transport

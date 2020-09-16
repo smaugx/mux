@@ -14,7 +14,7 @@ namespace mux {
 
 namespace transport {
 
-class EpollReactor : public RunEntity {
+class EpollReactor : public RunEntity, public std::enable_shared_from_this<EpollReactor> {
 public:
     EpollReactor(const EpollReactor& other)            = delete;
     EpollReactor& operator=(const EpollReactor& other) = delete;
