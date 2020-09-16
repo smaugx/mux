@@ -57,8 +57,7 @@ link_directories(${LIBRARY_OUTPUT_PATH})  # generate in building
 
 add_subdirectory(demo/bench)
 add_subdirectory(demo/echo)
-add_subdirectory(epoll)
+add_subdirectory(socket)
 add_subdirectory(mbase)
 add_subdirectory(message_handle)
-add_subdirectory(transport)
 

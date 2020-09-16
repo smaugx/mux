@@ -10,8 +10,8 @@ Import('env')
 bench_server_bin = 'bench_server'
 bench_client_bin = 'bench_client'
 
-bench_server_sources = ['bench_server.cc']
-client_sources = ['client.cc']
+bench_server_sources = ['server.cc', 'bench_socket.cc', 'bench_tcp_acceptor.cc']
+client_sources = ['client.cc', 'bench_client.cc', 'bench_socket.cc']
 
 project_dir  = env['MUX_DIR']
 
@@ -26,7 +26,7 @@ env.Program(target = os.path.join(bin_dir, bench_server_bin),
         source  = bench_server_sources,
         CPPPATH = env['headers'],
         LIBPATH = env['libs'],
-        LIBS    = ['transport', 'msghandler', 'epoll', 'mbase', 'pthread'],
+        LIBS    = ['msghandler', 'muxsocket', 'mbase', 'pthread'],
         CCFLAGS = env['ccflags']
         )
 
@@ -35,6 +35,6 @@ env.Program(target = os.path.join(bin_dir, bench_client_bin),
         source  = client_sources,
         CPPPATH = env['headers'],
         LIBPATH = env['libs'],
-        LIBS    = ['transport', 'msghandler', 'epoll', 'mbase', 'pthread'],
+        LIBS    = ['msghandler', 'muxsocket', 'mbase', 'pthread'],
         CCFLAGS = env['ccflags']
         )

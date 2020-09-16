@@ -12,7 +12,7 @@
 #include <condition_variable>
 #include <queue>
 
-#include "mbase/packet.h"
+#include "mbase/include/packet.h"
 
 namespace mux {
 
@@ -74,8 +74,6 @@ public:
     void RegisterOnDispatchCallback(callback_recv_t callback);
     void UnRegisterOnDispatchCallback();
     void Init();
-
-private:
     void Join();
 
 private:

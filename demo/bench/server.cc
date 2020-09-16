@@ -3,10 +3,11 @@
 #include <string>
 #include <iostream>
 
-#include "transport/include/tcp_transport.h"
+#include "bench_tcp_acceptor.h"
+
 #include "message_handle/include/message_handler.h"
-#include "mbase/packet.h"
-#include "mbase/mux_log.h"
+#include "mbase/include/mux_log.h"
+#include "socket/include/event_trigger.h"
 
 // nlohmann_json
 #include <nlohmann/json.hpp>
@@ -32,13 +33,14 @@ int main(int argc, char* argv[]) {
         local_port = std::atoi(argv[2]);
     }
 
-    bool is_server = true;
-    transport::TcpTransportPtr tcp_bench_server = std::make_shared<transport::TcpTransport>(local_ip, local_port, is_server);
-    if (!tcp_bench_server) {
-        std::cout << "tcp_bench_server create faield!" << std::endl;
-        MUX_ERROR("tcp_bench_server create failed");
+    // create and init TcpAcceptor
+    bench::BenchTcpAcceptor* bench_tcp_acceptor = new bench::BenchTcpAcceptor(local_ip, local_port);
+    if (!bench_tcp_acceptor) {
+        MUX_ERROR("echo_tcp_acceptor create failed");
+        std::cout << "echo_tcp_acceptor create failed" << std::endl;
         exit(-1);
     }
+
 
     std::atomic<uint32_t> recv_num {0};
     auto recv_call = [&](const transport::PacketPtr& packet) -> void {
@@ -54,15 +56,29 @@ int main(int argc, char* argv[]) {
     auto dispath_call = [&](transport::PacketPtr& packet) -> void {
         return msg_handle->HandleMessage(packet);
     };
-    tcp_bench_server->RegisterOnRecvCallback(dispath_call);
+    bench_tcp_acceptor->RegisterNewSocketRecvCallback(dispath_call);
 
-    if (!tcp_bench_server->Start()) {
-        MUX_ERROR("tcp_bench_server start failed!");
-        std::cout << "tcp_bench_server start failed!" << std::endl;
+    // create and init EventTrigger
+    int ep_num = 4;
+    std::shared_ptr<transport::EventTrigger> event_trigger = std::make_shared<transport::EventTrigger>(ep_num);
+    auto accept_callback = [&](int32_t cli_fd, const std::string& remote_ip, uint16_t remote_port) -> transport::BasicSocket* {
+        return bench_tcp_acceptor->OnSocketAccept(cli_fd, remote_ip, remote_port);
+    };
+    event_trigger->Start();
+
+    if (!bench_tcp_acceptor->Start()) {
+        MUX_ERROR("echo_tcp_acceptor start failed");
+        std::cout << "echo_tcp_acceptor start failed" << std::endl;
         exit(1);
     }
-    std::cout << "############tcp_bench_server ["<< local_ip << ":" << local_port << "] started!################" << std::endl;
-    MUX_INFO("############tcp_bench_server [{0}:{1}] started!################", local_ip, local_port);
+
+    // attention: RegisterDescriptor must after Start
+    event_trigger->RegisterOnAcceptCallback(accept_callback);
+    event_trigger->RegisterDescriptor((void*)bench_tcp_acceptor);
+
+    std::cout << "############tcp_echo_server[" << bench_tcp_acceptor->GetLocalIp() << ":" << bench_tcp_acceptor->GetLocalPort()  << "] started!################\n" << std::endl;
+    MUX_INFO("############tcp_echo_server [{0}:{1}] started!################", local_ip, local_port);
+
 
 
     while (true) {
@@ -78,6 +94,11 @@ int main(int argc, char* argv[]) {
         std::cout << "total:" << recv_num << " step_recv:" << step_recv << " diff:" << diff.count() << " us" << " rate:" << rate << " tps" << std::endl;
 
     }
+    std::cout << "exit, wait clean..." << std::endl;
+    event_trigger->Stop();
+    delete bench_tcp_acceptor;
+    msg_handle->Join();
+    std::this_thread::sleep_for(std::chrono::seconds(2));
 
     return 0;
 }

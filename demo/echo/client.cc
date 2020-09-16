@@ -5,8 +5,10 @@
 #include <string>
 #include <iostream>
 
-#include "transport/include/tcp_transport.h"
-#include "mbase/mux_log.h"
+#include "echo_client.h"
+#include "mbase/include/mux_log.h"
+#include "socket/include/event_trigger.h"
+
 
 using namespace mux;
 
@@ -27,31 +29,38 @@ int main(int argc, char* argv[]) {
     if (argc >= 3) {
         server_port = std::atoi(argv[2]);
     }
-    bool is_server = false;
-    transport::TcpTransportPtr tcp_client = std::make_shared<transport::TcpTransport>(server_ip, server_port, is_server);
+
+    echo::EchoTcpClient* tcp_client = new echo::EchoTcpClient(server_ip, server_port);
     if (!tcp_client) {
         std::cout << "tcp_client create faield!" << std::endl;
         MUX_ERROR("tcp_client create failed");
         exit(-1);
     }
 
-
     auto recv_call = [](const transport::PacketPtr& packet) -> void {
         ::write(1, "\nrecv:", 6);
-        ::write(1, packet->msg_.data(), packet->msg_.size());
+        ::write(1, packet->msg.data(), packet->msg.size());
         ::write(1, "\n", 1);
         return;
     };
 
     tcp_client->RegisterOnRecvCallback(recv_call);
 
+    // create and init EventTrigger
+    int ep_num = 1;
+    std::shared_ptr<transport::EventTrigger> event_trigger = std::make_shared<transport::EventTrigger>(ep_num);
+    event_trigger->Start();
+
     if (!tcp_client->Start()) {
         std::cout << "tcp_client start failed!" << std::endl;
         MUX_ERROR("tcp_client start failed!");
         exit(1);
     }
+
+    event_trigger->RegisterDescriptor((void*)tcp_client);
     std::cout << "############tcp_client started! connected to ["<< server_ip << ":" << server_port << "] ################\n" << std::endl;
     MUX_INFO("############tcp_client started!################");
+
 
     /*
     uint32_t send_total = 1000000;
@@ -68,11 +77,22 @@ int main(int argc, char* argv[]) {
     while (true) {
         std::cout << std::endl<<  "input:";
         auto packet = std::make_shared<transport::Packet>();
-        std::getline(std::cin, packet->msg_);
-        MUX_DEBUG("send {0}", packet->msg_);
+        std::string msg;
+        std::getline(std::cin, msg);
+        if (msg.compare("q") == 0 || msg.compare("quit") == 0 || msg.compare("exit") == 0) {
+            break;
+        }
+        packet->msg = msg;
+        MUX_DEBUG("send {0}", packet->msg);
         tcp_client->SendData(packet);
         //std::this_thread::sleep_for(std::chrono::seconds(1));
     }
 
+    event_trigger->Stop();
+
+    delete tcp_client;
+
+    std::cout << "exit, wait clean..." << std::endl;
+    std::this_thread::sleep_for(std::chrono::seconds(2));
     return 0;
 }

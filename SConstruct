@@ -53,7 +53,7 @@ Export('env')
 
 SConscript(['./mbase/SConscript'])
 SConscript(['./message_handle/SConscript'])
-SConscript(['./epoll/SConscript'])
+SConscript(['./socket/SConscript'])
 SConscript(['./transport/SConscript'])
 SConscript(['./demo/bench/SConscript'])
 SConscript(['./demo/echo/SConscript'])
