@@ -94,6 +94,11 @@ int main(int argc, char* argv[]) {
         std::cout << "total:" << recv_num << " step_recv:" << step_recv << " diff:" << diff.count() << " us" << " rate:" << rate << " tps" << std::endl;
 
     }
+    std::cout << "exit, wait clean..." << std::endl;
+    event_trigger->Stop();
+    delete bench_tcp_acceptor;
+    msg_handle->Join();
+    std::this_thread::sleep_for(std::chrono::seconds(2));
 
     return 0;
 }
