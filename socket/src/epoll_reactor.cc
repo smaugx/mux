@@ -130,10 +130,10 @@ void EpollReactor::OnSocketAccept(void* ptr) {
         int cli_fd = accept(handle, (struct sockaddr*)&in_addr, &in_len);
         if (cli_fd == -1) {
             if ( (errno == EAGAIN) || (errno == EWOULDBLOCK) ) {
-                MUX_INFO("accept all coming connections success");
+                MUX_INFO("eid:{0} accept all coming connections success", eid_);
                 break;
             } else {
-                MUX_ERROR("accept error");
+                MUX_ERROR("eid:{0} accept error", eid_);
                 continue;
             }
         }
@@ -147,7 +147,7 @@ void EpollReactor::OnSocketAccept(void* ptr) {
         }
         std::string remote_ip(inet_ntoa(in_addr.sin_addr));
         uint16_t remote_port = in_addr.sin_port;
-        MUX_DEBUG("accept connection from {0}:{1}", remote_ip, remote_port);
+        MUX_DEBUG("eid:{0} accept connection from {1}:{2}",eid_, remote_ip, remote_port);
         fprintf(stdout, "accept connection from %s:%u\n", remote_ip.c_str(), remote_port);
         fflush(stdout);
         int mr = MakeSocketNonBlock(cli_fd);
@@ -205,17 +205,17 @@ void EpollReactor::EpollLoop() {
             int events = alive_events[i].events;
 
             if ( (events & EPOLLERR) || (events & EPOLLHUP) ) {
-                MUX_DEBUG("epollerr or epollhup");
+                MUX_DEBUG("eid:{0} epollerr or epollhup", eid_);
                 // An error has occured on this fd, or the socket is not ready for reading (why were we notified then?).
                 OnSocketError(ptr);
             } else  if (events & EPOLLRDHUP) {
-                MUX_DEBUG("epollrdhup");
+                MUX_DEBUG("eid:{0} epollrdhup", eid_);
                 // Stream socket peer closed connection, or shut down writing half of connection.
                 // more inportant, We still to handle disconnection when read()/recv() return 0 or -1 just to be sure.
                 // close fd and epoll will remove it
                 OnSocketError(ptr);
             } else if ( events & EPOLLIN ) {
-                MUX_DEBUG("epollin");
+                MUX_DEBUG("eid:{0} epollin",eid_);
                 SocketBase* sock = static_cast<SocketBase*>(ptr);
                 if (sock->CheckListener()) {
                     // listen fd coming connections
@@ -226,17 +226,17 @@ void EpollReactor::EpollLoop() {
                 }
                 sock = nullptr;
             } else if ( events & EPOLLOUT ) {
-                MUX_DEBUG("epollout");
+                MUX_DEBUG("eid:{0} epollout", eid_);
                 // write event for fd (not including listen-fd), meaning send buffer is available for big files
                 OnSocketWrite(ptr);
             } else {
-                MUX_WARN("unknow epoll event");
+                MUX_WARN("eid:{0} unknow epoll event", eid_);
             }
         } // end for (int i = 0; ...
 
     } // end while (!shutdown_flag_)
 
-    MUX_INFO("shutdown_flag:{0} will shutdown epoll_reactor", shutdown_flag_);
+    MUX_INFO("eid:{0} shutdown_flag:{1} will shutdown epoll_reactor", eid_, shutdown_flag_);
     free(alive_events);
 }
 
