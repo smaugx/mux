@@ -61,17 +61,13 @@ int main(int argc, char* argv[]) {
     std::cout << "############tcp_client started! connected to ["<< server_ip << ":" << server_port << "] ################\n" << std::endl;
     MUX_INFO("############tcp_client started!################");
 
-
     /*
-    uint32_t send_total = 1000000;
-    auto start = std::chrono::system_clock::now();
-    for (uint32_t i = 0; i < send_total; ++i) {
-        std::string msg('c', 200);
-        msg += std::to_string(i);
+    while (true) {
+        auto packet = std::make_shared<transport::Packet>();
+        packet->msg = std::string(200, 'b');
+        tcp_client->SendData(packet);
+        std::this_thread::sleep_for(std::chrono::seconds(3));
     }
-    auto end = std::chrono::system_clock::now();
-    std::chrono::duration<double> diff = end - start;
-    std::cout << "send "<< send_total << " packets,time takes:" << diff.count() << std::endl;
     */
 
     while (true) {

@@ -83,13 +83,7 @@ int main(int argc, char* argv[]) {
     MUX_INFO("############tcp_echo_server [{0}:{1}] started!################", local_ip, local_port);
 
     while (true) {
-        std::cout << std::endl<<  "input:";
-        std::string msg;
-        std::getline(std::cin, msg);
-        if (msg.compare("q") == 0 || msg.compare("quit") == 0 || msg.compare("exit") == 0) {
-            break;
-        }
-        //std::this_thread::sleep_for(std::chrono::seconds(1));
+        std::this_thread::sleep_for(std::chrono::seconds(1));
     }
 
     std::cout << "exit, wait clean..." << std::endl;

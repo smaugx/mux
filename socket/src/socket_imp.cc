@@ -51,6 +51,8 @@ void MuxSocket::HandleRead() {
         if (callback_) {
             callback_(packet);
         }
+
+        bzero(read_buf, sizeof(read_buf));
     }
     if (n == -1) {
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
