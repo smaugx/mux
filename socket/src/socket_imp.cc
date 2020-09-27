@@ -34,6 +34,39 @@ MuxSocket::~MuxSocket() {
 }
 
 void MuxSocket::HandleRead() {
+    /*
+    char header_buf[PACKET_HEADER_SIZE + 1];
+    bzero(header_buf, sizeof(header_buf));
+    int n = -1;
+    while (true) {
+        n = ::read(fd_, header_buf, sizeof(header_buf));
+        if (n <= 0) {
+            // read data finished or error
+            break;
+        }
+
+        uint16_t packet_len;
+        memcpy(&packet_len, header_buf, sizeof(packet_len));
+        // check packet_len is legal
+        if (packet_len <= 0 || packet_len > PACKET_LEN_MAX) {
+            MUX_WARN("packet header invalid, read packet len:{0}",  packet_len);
+            continue;
+        }
+
+        // begin read packet body using packet_len
+        uint16_t packet_read = 0;
+        int pn = -1;
+        char read_buf[PACKET_LEN_MAX + 1];
+        bzero(read_buf, sizeof(read_buf));
+        while (packet_read < packet_len) {
+            pn = ::read(fd_, read_buf, sizeof(read_buf));
+        }
+
+    }
+    */
+
+
+
     char read_buf[4096];
     bzero(read_buf, sizeof(read_buf));
     int n = -1;
@@ -97,6 +130,13 @@ int32_t MuxSocket::SendData(const PacketPtr& packet) {
         MUX_ERROR("socket closed, not ready for send");
         return -1;
     }
+
+    int hr = ::write(fd_, &(packet->header), sizeof(packet->header));
+    if (hr == -1) {
+        MUX_WARN("send packet header failed");
+        return -1;
+    }
+
     int r = ::write(fd_, packet->msg.data(), packet->msg.size());
     if (r == -1) {
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
