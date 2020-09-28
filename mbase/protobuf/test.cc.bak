@@ -1,0 +1,12 @@
+#include <string>
+#include <iostream>
+
+#include "mux.pb.h"
+
+int main() {
+    mux::protobuf::MuxMessage msg;
+    msg.set_data("fasdfasd");
+
+    std::cout << "msg:" << msg.data() << std::endl;
+    return 0;
+}

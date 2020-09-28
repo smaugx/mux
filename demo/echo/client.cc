@@ -8,6 +8,8 @@
 #include "echo_client.h"
 #include "mbase/include/mux_log.h"
 #include "socket/include/event_trigger.h"
+#include "mbase/include/packet.h"
+#include "mbase/protobuf/mux.pb.h"
 
 
 using namespace mux;
@@ -37,10 +39,12 @@ int main(int argc, char* argv[]) {
         exit(-1);
     }
 
-    auto recv_call = [](const transport::PacketPtr& packet) -> void {
-        ::write(1, "\nrecv:", 6);
-        ::write(1, packet->msg.data(), packet->msg.size());
-        ::write(1, "\n", 1);
+    auto recv_call = [](const PacketPtr& packet) -> void {
+        PMessagePtr message = packet->GetMessage<PMessage>();
+        if (!message) {
+            return;
+        }
+        std::cout << "\nrecv:" << message->data() << std::endl << std::endl;
         return;
     };
 
@@ -72,14 +76,17 @@ int main(int argc, char* argv[]) {
 
     while (true) {
         std::cout << std::endl<<  "input:";
-        auto packet = std::make_shared<transport::Packet>();
         std::string msg;
         std::getline(std::cin, msg);
         if (msg.compare("q") == 0 || msg.compare("quit") == 0 || msg.compare("exit") == 0) {
             break;
         }
-        packet->msg = msg;
-        MUX_DEBUG("send {0}", packet->msg);
+        if (msg.empty()) {
+            continue;
+        }
+        PMessage pmsg;
+        pmsg.set_data(msg);
+        auto packet = std::make_shared<Packet>(pmsg);
         tcp_client->SendData(packet);
         //std::this_thread::sleep_for(std::chrono::seconds(1));
     }

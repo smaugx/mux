@@ -7,19 +7,33 @@
 namespace mux {
 
 namespace transport {
-struct Packet;
-using PacketPtr = std::shared_ptr<Packet>;
 
 class BasicSocket;
+
 }
 
+class Packet;
+using PacketPtr = std::shared_ptr<Packet>;
 
-// the larger priority_num , the lower priority
-// 0 is highest priority
+
+
+enum PacketBinaryProtocol {
+    kInvalidBinaryProtocol = 0,
+    kProtobufBinaryProtocol,
+    kJsonBinaryProtocol
+};
+
 static const uint32_t kMaxPacketPriority = 3;
+// the lowest, the highest priority
+enum PacketPriority {
+    kCriticalType = 0,
+    kHighType,
+    kMediumType,
+    kLowType,
+};
 
 
-using callback_recv_t    = std::function<void(transport::PacketPtr&)>;
+using callback_recv_t    = std::function<void(PacketPtr&)>;
 using callback_accept_t  = std::function<transport::BasicSocket*(int32_t, const std::string&, uint16_t)>;
 
 }

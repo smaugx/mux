@@ -8,6 +8,7 @@
 #include "message_handle/include/message_handler.h"
 #include "mbase/include/mux_log.h"
 #include "socket/include/event_trigger.h"
+#include "mbase/include/packet.h"
 
 // nlohmann_json
 #include <nlohmann/json.hpp>
@@ -43,7 +44,7 @@ int main(int argc, char* argv[]) {
 
 
     std::atomic<uint32_t> recv_num {0};
-    auto recv_call = [&](const transport::PacketPtr& packet) -> void {
+    auto recv_call = [&](const PacketPtr& packet) -> void {
         //tcp_bench_server->SendData(packet);
         recv_num += 1;
         return;
@@ -53,7 +54,7 @@ int main(int argc, char* argv[]) {
     std::shared_ptr<transport::MessageHandler> msg_handle = std::make_shared<transport::MessageHandler>();
     msg_handle->Init();
     msg_handle->RegisterOnDispatchCallback(recv_call);
-    auto dispath_call = [&](transport::PacketPtr& packet) -> void {
+    auto dispath_call = [&](PacketPtr& packet) -> void {
         return msg_handle->HandleMessage(packet);
     };
     bench_tcp_acceptor->RegisterNewSocketRecvCallback(dispath_call);

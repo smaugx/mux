@@ -8,6 +8,7 @@
 #include "bench_client.h"
 #include "mbase/include/mux_log.h"
 #include "socket/include/event_trigger.h"
+#include "mbase/include/packet.h"
 
 
 using namespace mux;
@@ -38,7 +39,7 @@ int main(int argc, char* argv[]) {
     }
 
     std::atomic<uint32_t> recv_num {0};
-    auto recv_call = [&](const transport::PacketPtr& packet) -> void {
+    auto recv_call = [&](const PacketPtr& packet) -> void {
         recv_num += 1;
         return;
     };
@@ -63,12 +64,13 @@ int main(int argc, char* argv[]) {
     uint32_t send_total = 1000000;
     auto start = std::chrono::system_clock::now();
     std::string msg(200, 'b');
-    auto packet = std::make_shared<transport::Packet>();
-    packet->msg = msg;
+    PMessage pmsg;
+    pmsg.set_data(msg);
+    auto packet = std::make_shared<Packet>(pmsg);
     //for (uint32_t i = 0; i < send_total; ++i) {
     uint32_t send_num = 0;
     while (true) {
-        packet->priority = send_num % (mux::kMaxPacketPriority +1);
+        packet->header().priority = send_num % (mux::kMaxPacketPriority +1);
         tcp_client->SendData(packet);
         //std::this_thread::sleep_for(std::chrono::microseconds(1)); // ms
 

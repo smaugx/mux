@@ -8,6 +8,7 @@
 #include "message_handle/include/message_handler.h"
 #include "mbase/include/mux_log.h"
 #include "socket/include/event_trigger.h"
+#include "mbase/include/packet.h"
 
 using namespace mux;
 
@@ -39,8 +40,13 @@ int main(int argc, char* argv[]) {
         exit(-1);
     }
 
-    auto recv_call = [&](const transport::PacketPtr& packet) -> void {
-        auto key = packet->from_ip_addr + ":" + std::to_string(packet->from_ip_port);
+    auto recv_call = [&](const PacketPtr& packet) -> void {
+        PMessagePtr message = packet->GetMessage<PMessage>();
+        if (!message) {
+            return;
+        }
+
+        auto key = packet->get_from_ip_addr() + ":" + std::to_string(packet->get_from_ip_port());
         auto sock = echo_tcp_acceptor->FindSession(key);
         if (!sock) {
             MUX_WARN("not found session:{0}", key);
@@ -53,7 +59,7 @@ int main(int argc, char* argv[]) {
     std::shared_ptr<transport::MessageHandler> msg_handle = std::make_shared<transport::MessageHandler>();
     msg_handle->Init();
     msg_handle->RegisterOnDispatchCallback(recv_call);
-    auto dispath_call = [&](transport::PacketPtr& packet) -> void {
+    auto dispath_call = [&](PacketPtr& packet) -> void {
         return msg_handle->HandleMessage(packet);
     };
 

@@ -8,6 +8,9 @@ set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
+# output build progress log
+set(CMAKE_VERBOSE_MAKEFILE OFF)
+
 project(MUX CXX C)
 
 add_definitions(
@@ -55,9 +58,9 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})  # current CMakeLists.txt dir (
 link_directories(${CMAKE_SOURCE_DIR}/third-party/lib)
 link_directories(${LIBRARY_OUTPUT_PATH})  # generate in building
 
-add_subdirectory(demo/bench)
-add_subdirectory(demo/echo)
 add_subdirectory(socket)
 add_subdirectory(mbase)
 add_subdirectory(message_handle)
+add_subdirectory(demo/bench)
+add_subdirectory(demo/echo)
 

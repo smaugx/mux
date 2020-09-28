@@ -101,7 +101,7 @@ void MessageHandler::Init() {
     }
     MUX_INFO("create {0} threadconsumer", kMaxConsumer);
 
-    for (uint32_t i = 0; i < kMaxPacketPriority; ++i) {
+    for (uint32_t i = 0; i <= kMaxPacketPriority; ++i) {
         priority_queue_map_[i] = std::queue<PacketPtr>();
     }
     MUX_INFO("create {0} priority map_queue", kMaxPacketPriority);
@@ -109,7 +109,7 @@ void MessageHandler::Init() {
 
 PacketPtr MessageHandler::GetMessageFromQueue() {
     std::unique_lock<std::mutex> lock(priority_queue_map_mutex_);
-    for (uint32_t i = 0; i < kMaxPacketPriority + 1; ++i) {
+    for (uint32_t i = 0; i <= kMaxPacketPriority; ++i) {
         if (!priority_queue_map_[i].empty()) {
             PacketPtr packet = priority_queue_map_[i].front();
             priority_queue_map_[i].pop();
@@ -146,8 +146,8 @@ void MessageHandler::HandleMessage(PacketPtr& packet) {
         return;
     }
     uint32_t packet_priority = kMaxPacketPriority; // the lowest priority
-    if (packet->priority < kMaxPacketPriority) {
-        packet_priority = packet->priority;
+    if (packet->header().priority< kMaxPacketPriority) {
+        packet_priority = packet->header().priority;
     }
 
     {
