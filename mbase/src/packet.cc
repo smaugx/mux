@@ -5,52 +5,82 @@ namespace mux {
 
 
 Packet::Packet() {
+    packet_header header;
+    header.packet_len = 0;
+    header.binary_protocol = kInvalidBinaryProtocol;
+    header.priority = kLowType;
+    /*
+    for (uint32_t i = 0; i < PACKET_HEAD_SIZE; ++i) {
+        data_.push_back(*((uint8_t*)(&header + i)));
+    }
+    */
+    std::copy((uint8_t*)&header, (uint8_t*)(&header + PACKET_HEAD_SIZE), std::back_inserter(data_));
 }
 
-Packet::Packet(const std::string& body)
-    : body_{ body } {
-    header_.packet_len = body.size();
-    header_.binary_protocol = kInvalidBinaryProtocol;
-    header_.priority = kLowType;
+Packet::Packet(const std::string& body) {
+    packet_header header;
+    header.packet_len = body.size();
+    header.binary_protocol = kInvalidBinaryProtocol;
+    header.priority = kLowType;
+    /*
+    for (uint32_t i = 0; i < PACKET_HEAD_SIZE; ++i) {
+        data_.push_back(*((uint8_t*)(&header + i)));
+    }
+    */
+    std::copy((uint8_t*)&header, (uint8_t*)(&header + PACKET_HEAD_SIZE), std::back_inserter(data_));
+    std::copy(body.begin(), body.end(), std::back_inserter(data_));
 }
 
-Packet::Packet(const std::string& body, uint32_t priority)
-    : body_{ body } {
-    header_.packet_len = body.size();
-    header_.binary_protocol = kInvalidBinaryProtocol;
-    header_.priority = priority;
-}
-
-
-Packet::Packet(const std::string& body, uint16_t binary_protocol)
-    : body_{ body } {
-    header_.packet_len = body.size();
-    header_.binary_protocol = binary_protocol;
-    header_.priority = kLowType;
-}
-
-Packet::Packet(const std::string& body, uint16_t binary_protocol, uint32_t priority)
-    : body_{ body } {
-    header_.packet_len = body.size();
-    header_.binary_protocol = binary_protocol;
-    header_.priority = priority;
+Packet::Packet(const std::string& body, uint8_t binary_protocol, uint8_t priority) {
+    packet_header header;
+    header.packet_len = body.size();
+    header.binary_protocol = binary_protocol;
+    header.priority = priority;
+    /*
+    for (uint32_t i = 0; i < PACKET_HEAD_SIZE; ++i) {
+        data_.push_back(*((uint8_t*)(&header + i)));
+    }
+    */
+    std::copy((uint8_t*)&header, (uint8_t*)(&header + PACKET_HEAD_SIZE), std::back_inserter(data_));
+    std::copy(body.begin(), body.end(), std::back_inserter(data_));
 }
 
 Packet::Packet(const PMessage& protobuf_msg) {
-    protobuf_msg.SerializeToString(&body_);
-    header_.packet_len = body_.size();
-    header_.binary_protocol = kProtobufBinaryProtocol;
-    header_.priority = kLowType;
+    std::string body;
+    protobuf_msg.SerializeToString(&body);
+
+    packet_header header;
+    header.packet_len = body.size();
+    header.binary_protocol = kProtobufBinaryProtocol;
+    header.priority = kLowType;
+    /*
+    for (uint32_t i = 0; i < PACKET_HEAD_SIZE; ++i) {
+        data_.push_back(*((uint8_t*)(&header + i)));
+    }
+    */
+    std::copy((uint8_t*)&header, (uint8_t*)(&header + PACKET_HEAD_SIZE), std::back_inserter(data_));
+    std::copy(body.begin(), body.end(), std::back_inserter(data_));
 }
 
-packet_header& Packet::header() {
-    return header_;
+Packet::Packet(const uint8_t* data, uint32_t size) {
+    std::copy(data, data+size, std::back_inserter(data_));
 }
 
-std::string& Packet::body() {
-    return body_;
+const uint8_t* Packet::data() const {
+    return (uint8_t*)&data_;
 }
 
+uint32_t Packet::size() const {
+    return data_.size();
+}
+
+const uint8_t* Packet::body() const {
+    return (uint8_t*)(&data_ + PACKET_HEAD_SIZE);
+}
+
+uint16_t Packet::body_size() const {
+    return data_.size() - PACKET_HEAD_SIZE;
+}
 
 const std::string& Packet::get_from_ip_addr() {
     return from_ip_addr_;
@@ -69,11 +99,15 @@ uint16_t Packet::get_to_ip_port() {
 }
 
 uint16_t Packet::get_binary_protocol() {
-    return header_.binary_protocol;
+    packet_header header;
+    memcpy(&header, (void*)&data_, PACKET_HEAD_SIZE);
+    return header.binary_protocol;
 }
 
-uint32_t Packet::get_priority() {
-    return header_.priority;
+uint16_t Packet::get_priority() {
+    packet_header header;
+    memcpy(&header, (void*)&data_, PACKET_HEAD_SIZE);
+    return header.priority;
 }
 
 void Packet::set_from_ip_addr(const std::string& from_ip_addr) {
@@ -92,15 +126,28 @@ void Packet::set_to_ip_port(uint16_t to_ip_port) {
     to_ip_port_ = to_ip_port;
 }
 
+uint16_t Packet::append_body (const std::string& data) {
+    std::copy(data.begin(), data.end(), std::back_inserter(data_));
+
+    packet_header header;
+    memcpy(&header, (void*)&data_, PACKET_HEAD_SIZE);
+    header.packet_len = data_.size() - PACKET_HEAD_SIZE; // update body size
+
+    // update header
+    for (uint32_t i = 0; i < PACKET_HEAD_SIZE; ++i) {
+        data_[i] = *(uint8_t*)(&header + i);
+    }
+}
+
 template<>
 PMessagePtr Packet::GetMessage<PMessage>() {
-    if (header_.binary_protocol != kProtobufBinaryProtocol) {
-        MUX_ERROR("GetMessage(protobuf) type failed:{0}", header_.binary_protocol);
+    if (get_binary_protocol() != kProtobufBinaryProtocol) {
+        MUX_ERROR("GetMessage(protobuf) type failed:{0}", get_binary_protocol());
         return nullptr;
     }
 
     PMessagePtr message = std::make_shared<PMessage>();
-    if (!message->ParseFromArray(body_.data(), body_.size()))
+    if (!message->ParseFromArray((data_.data() + PACKET_HEAD_SIZE), data_.size() - PACKET_HEAD_SIZE))
     {
         MUX_ERROR("Message ParseFromString from string failed!");
         return nullptr;

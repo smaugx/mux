@@ -146,8 +146,8 @@ void MessageHandler::HandleMessage(PacketPtr& packet) {
         return;
     }
     uint32_t packet_priority = kMaxPacketPriority; // the lowest priority
-    if (packet->header().priority< kMaxPacketPriority) {
-        packet_priority = packet->header().priority;
+    if (packet->get_priority() < kMaxPacketPriority) {
+        packet_priority = packet->get_priority();
     }
 
     {

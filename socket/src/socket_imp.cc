@@ -35,6 +35,7 @@ MuxSocket::~MuxSocket() {
 }
 
 void MuxSocket::HandleRead() {
+    /*
     char header_buf[sizeof(packet_header)];
     bzero(header_buf, sizeof(header_buf));
     int n = -1;
@@ -57,6 +58,7 @@ void MuxSocket::HandleRead() {
             MUX_WARN("packet header invalid, read packet len:{0}",  packet->header().packet_len);
             continue;
         }
+
 
         // begin read packet body using packet_len
         MUX_DEBUG("read packet header: packet_len:{0} binary_protocol:{1}", packet->header().packet_len, packet->header().binary_protocol);
@@ -128,6 +130,67 @@ void MuxSocket::HandleRead() {
         MUX_ERROR("something goes wrong, will close this fd:{0}.", fd_);
         return;
     }
+    */
+
+    int n = -1;
+    MUX_DEBUG("in_buf capacity:{0} size:{1} free_size:{2}", in_buf_.capacity(), in_buf_.size(), in_buf_.free_size());
+    while ( (n = ::read(fd_, in_buf_.write_head(), in_buf_.free_size()) > 0)) {
+        MUX_DEBUG("read size {0} from remote {1}:{2}", n, remote_ip_, remote_port_);
+        in_buf_.commit(n);
+        MUX_DEBUG("in_buf capacity:{0} size:{1} free_size:{2}", in_buf_.capacity(), in_buf_.size(), in_buf_.free_size());
+
+        // try read packet
+        if (in_buf_.size() < PACKET_HEAD_SIZE) {
+            continue;
+        }
+        // size beyond packet head size
+        while (in_buf_.size() >= PACKET_HEAD_SIZE) {
+            // just read head, no need consume
+            packet_header header;
+            memcpy(&header, in_buf_.read_head(), PACKET_HEAD_SIZE);
+            // check packet_len is legal
+            if (header.packet_len <= 0 || header.packet_len > PACKET_LEN_MAX) {
+                MUX_WARN("packet header invalid, read packet len:{0}, close this fd:{1}",  header.packet_len, fd_);
+                Close();
+                return;
+            }
+            if (in_buf_.size() >= (PACKET_HEAD_SIZE + header.packet_len)) {
+                // at list one whole packet
+                mux::PacketPtr packet = std::make_shared<mux::Packet>(in_buf_.read_head(), PACKET_HEAD_SIZE + header.packet_len);
+                in_buf_.consume(PACKET_HEAD_SIZE + header.packet_len);
+                MUX_DEBUG("in_buf capacity:{0} size:{1} free_size:{2}", in_buf_.capacity(), in_buf_.size(), in_buf_.free_size());
+
+                // using callback or using virtual function both is ok
+                if (callback_) {
+                    MUX_DEBUG("callback for packet");
+                    callback_(packet);
+                }
+            } else {
+                // not enough bytes for a whole packet
+                break;
+            }
+        } // end while (in_buf_.size() >= PACKET_HEAD_SIZE)
+    } // end while((n=::read(...
+
+    if (n == -1) {
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            // read finished
+            MUX_DEBUG("read finished in fd:{0}", fd_);
+            return;
+        }
+        // something goes wrong for this fd, should close it
+        Close();
+        MUX_ERROR("something goes wrong, will close this fd:{0}.", fd_);
+        return;
+    }
+    if (n == 0) {
+        // this may happen when client close socket. EPOLLRDHUP usually handle this, but just make sure; should close this fd
+        Close();
+        MUX_ERROR("peer maybe closed, will close this fd:{0}.", fd_);
+        return;
+    }
+
+    return;
 
 
 
@@ -141,8 +204,10 @@ void MuxSocket::HandleRead() {
         MUX_DEBUG("recv_size:{0} from fd:{1}", n, fd_);
         std::string msg(read_buf, n);
         PacketPtr packet = std::make_shared<Packet>(msg);
-        packet->from_ip_addr = remote_ip_;
-        packet->from_ip_port = remote_port_;
+        packet->set_from_ip_addr(remote_ip_);
+        packet->set_from_ip_port(remote_port_);
+        packet->set_to_ip_addr(local_ip_);
+        packet->set_to_ip_port(local_port_);
         // finally handle recv data
         //HandleRecvData(packet);
 
@@ -198,21 +263,16 @@ int32_t MuxSocket::SendData(const PacketPtr& packet) {
         MUX_ERROR("socket closed, not ready for send");
         return -1;
     }
-    if (packet->header().packet_len != packet->body().size()) {
-        MUX_WARN("packet invalid packet_len:{0} body_size:{1}", packet->header().packet_len, packet->body().size());
+    if (packet->body_size() <= 0) {
+        MUX_WARN("packet invalid body_size:{1}", packet->body_size());
         return -1;
     }
 
-    int hr = ::write(fd_, &(packet->header()), sizeof(packet_header));
-    if (hr == -1) {
-        MUX_WARN("send packet header failed");
-        return -1;
-    }
-
-    int r = ::write(fd_, packet->body().data(), packet->body().size());
+    // send header + body
+    int r = ::write(fd_, packet->data(), packet->size());
     if (r == -1) {
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
-            MUX_INFO("send {0} bytes finished", packet->body().size());
+            MUX_INFO("send {0} bytes finished", packet->size());
             return -1;
         }
         // error happend
@@ -237,7 +297,6 @@ void MuxSocket::Close() {
 int32_t MuxSocket::HandleRecvData(const PacketPtr& packet) {
     // handle recv here
     MUX_DEBUG("handle recv data");
-    MUX_INFO("recv packet size:{0} content:{1}", (packet->body()).size(), packet->body());
     return 0;
 }
 

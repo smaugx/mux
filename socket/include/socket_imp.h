@@ -8,6 +8,7 @@
 
 #include "mbase/include/packet.h"
 #include "mbase/include/runnable.h"
+#include "socket/include/ringbuffer.h"
 
 namespace mux {
 
@@ -16,6 +17,8 @@ namespace transport {
 static const int32_t ERR_EVENT   = -1;
 static const int32_t READ_EVENT  = 0;
 static const int32_t WRITE_EVENT = 1;
+
+using RingBuffer =  transport::linear_ringbuffer;
 
 
 class SocketBase : public RunEntity {
@@ -129,6 +132,8 @@ protected:
     uint16_t remote_port_ { 0 };
     bool closed_ { true };
     callback_recv_t callback_;
+    RingBuffer in_buf_ { 4096 };  // recv data buffer
+    RingBuffer out_buf_{ 4096 }; // send data buffer
 };
 
 } // end namespace transport
