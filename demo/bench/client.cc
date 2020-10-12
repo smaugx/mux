@@ -70,7 +70,8 @@ int main(int argc, char* argv[]) {
     //for (uint32_t i = 0; i < send_total; ++i) {
     uint32_t send_num = 0;
     while (true) {
-        packet->header().priority = send_num % (mux::kMaxPacketPriority +1);
+        uint16_t random_priority = send_num % (mux::kMaxPacketPriority +1);
+        packet->set_priority(random_priority);
         tcp_client->SendData(packet);
         //std::this_thread::sleep_for(std::chrono::microseconds(1)); // ms
 

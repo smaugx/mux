@@ -36,6 +36,7 @@ public:
     void set_to_ip_addr(const std::string& to_ip_addr);
     void set_to_ip_port(uint16_t to_ip_port);
     uint16_t append_body(const std::string& data);
+    void set_priority(uint16_t priority);
 
 public:
     const uint8_t* data() const; // header + body

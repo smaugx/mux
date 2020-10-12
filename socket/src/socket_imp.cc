@@ -132,15 +132,25 @@ void MuxSocket::HandleRead() {
     }
     */
 
+
     int n = -1;
     MUX_DEBUG("in_buf capacity:{0} size:{1} free_size:{2}", in_buf_.capacity(), in_buf_.size(), in_buf_.free_size());
-    while ( (n = ::read(fd_, in_buf_.write_head(), in_buf_.free_size()) > 0)) {
+
+    char read_buf[4096];
+    bzero(read_buf, sizeof(read_buf));
+    uint32_t read_max_size = in_buf_.free_size();
+    while ( (n = ::read(fd_, read_buf, read_max_size)) > 0) {
+    //while ( (n = ::read(fd_, in_buf_.write_head(), in_buf_.free_size()) > 0)) {
         MUX_DEBUG("read size {0} from remote {1}:{2}", n, remote_ip_, remote_port_);
+        //std::cout << "ringbuff free_size:" << in_buf_.free_size() << " read size:" << n << std::endl;
+        memcpy(in_buf_.write_head(), read_buf, n);
         in_buf_.commit(n);
+        bzero(read_buf, sizeof(read_buf));
         MUX_DEBUG("in_buf capacity:{0} size:{1} free_size:{2}", in_buf_.capacity(), in_buf_.size(), in_buf_.free_size());
 
         // try read packet
         if (in_buf_.size() < PACKET_HEAD_SIZE) {
+            read_max_size = in_buf_.free_size();
             continue;
         }
         // size beyond packet head size
@@ -162,6 +172,10 @@ void MuxSocket::HandleRead() {
 
                 // using callback or using virtual function both is ok
                 if (callback_) {
+                    packet->set_to_ip_addr(local_ip_);
+                    packet->set_to_ip_port(local_port_);
+                    packet->set_from_ip_addr(remote_ip_);
+                    packet->set_from_ip_port(remote_port_);
                     MUX_DEBUG("callback for packet");
                     callback_(packet);
                 }
@@ -170,6 +184,8 @@ void MuxSocket::HandleRead() {
                 break;
             }
         } // end while (in_buf_.size() >= PACKET_HEAD_SIZE)
+
+        read_max_size = in_buf_.free_size();
     } // end while((n=::read(...
 
     if (n == -1) {
@@ -213,9 +229,10 @@ void MuxSocket::HandleRead() {
 
         // using callback or using virtual function both is ok
         if (callback_) {
-            callback_(packet);
+            //callback_(packet);
         }
 
+        MUX_DEBUG("read size:{0} data:{1}", n, msg);
         bzero(read_buf, sizeof(read_buf));
     }
     if (n == -1) {
@@ -235,9 +252,9 @@ void MuxSocket::HandleRead() {
         MUX_ERROR("peer maybe closed, will close this fd:{0}.", fd_);
         return;
     }
-    */
 
     return;
+    */
 }
 
 void MuxSocket::HandleWrite() {
@@ -267,6 +284,14 @@ int32_t MuxSocket::SendData(const PacketPtr& packet) {
         MUX_WARN("packet invalid body_size:{1}", packet->body_size());
         return -1;
     }
+
+    /*
+    packet_header h;
+    memcpy(&h, packet->data(), PACKET_HEAD_SIZE);
+    std::cout << "packet_header.packet_len = " << (uint32_t)h.packet_len << std::endl;
+    std::cout << "packet_header.binary_protocol = " << (uint32_t)h.binary_protocol << std::endl;
+    std::cout << "packet_header.priority = " << (uint32_t)h.priority << std::endl;
+    */
 
     // send header + body
     int r = ::write(fd_, packet->data(), packet->size());
