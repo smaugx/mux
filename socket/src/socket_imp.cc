@@ -208,8 +208,8 @@ void MuxSocket::HandleRead() {
     }
     if (n == 0) {
         // this may happen when client close socket. EPOLLRDHUP usually handle this, but just make sure; should close this fd
-        Close();
         MUX_ERROR("peer maybe closed, will close this fd:{0}.", fd_);
+        Close();
         return;
     }
 
@@ -320,7 +320,7 @@ void MuxSocket::Close() {
     if (closed_) {
         return;
     }
-    MUX_INFO("close socket(0) local {1}:{2} remote {3}:{4}", fd_, local_ip_, local_port_, remote_ip_, remote_port_);
+    MUX_INFO("close socket:{0} local {1}:{2} remote {3}:{4}", fd_, local_ip_, local_port_, remote_ip_, remote_port_);
     ::close(fd_);
     fd_ = -1;
     closed_ = true;
