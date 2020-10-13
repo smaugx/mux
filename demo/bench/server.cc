@@ -45,6 +45,13 @@ int main(int argc, char* argv[]) {
 
     std::atomic<uint32_t> recv_num {0};
     auto recv_call = [&](const PacketPtr& packet) -> void {
+        PMessagePtr message = packet->GetMessage<PMessage>();
+        if (!message) {
+	    std::cout << "parse from protobuf failed" << std::endl;
+            return;
+        }
+	//std::cout << "data:" << message->data() << std::endl;
+
         //tcp_bench_server->SendData(packet);
         recv_num += 1;
         return;

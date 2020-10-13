@@ -6,5 +6,5 @@ package mux.protobuf;
 message MuxMessage {
    uint32   version                             = 1;  // message version
    uint32   type                                = 2;  // message type
-   string   data                                = 3;  // the real binary content
+   bytes    data                                = 3;  // the real binary content
 }
