@@ -18,7 +18,7 @@ static const int32_t ERR_EVENT   = -1;
 static const int32_t READ_EVENT  = 0;
 static const int32_t WRITE_EVENT = 1;
 
-using RingBuffer =  transport::linear_ringbuffer;
+using RingBuffer =  transport::ring_buffer_s;
 
 
 class SocketBase : public RunEntity {

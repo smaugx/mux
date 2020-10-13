@@ -1,6 +1,9 @@
+#include <algorithm>
+
 #include "socket/include/socket_imp.h"
 #include "mbase/include/mux_log.h"
 #include "mbase/include/mux_utils.h"
+
 
 namespace mux {
 
@@ -135,16 +138,12 @@ void MuxSocket::HandleRead() {
 
     int n = -1;
     MUX_DEBUG("in_buf capacity:{0} size:{1} free_size:{2}", in_buf_.capacity(), in_buf_.size(), in_buf_.free_size());
-
     char read_buf[4096];
     bzero(read_buf, sizeof(read_buf));
-    uint32_t read_max_size = in_buf_.free_size();
+    uint32_t read_max_size = std::min((size_t)in_buf_.free_size(), (size_t)4096);
     while ( (n = ::read(fd_, read_buf, read_max_size)) > 0) {
-    //while ( (n = ::read(fd_, in_buf_.write_head(), in_buf_.free_size()) > 0)) {
         MUX_DEBUG("read size {0} from remote {1}:{2}", n, remote_ip_, remote_port_);
-        //std::cout << "ringbuff free_size:" << in_buf_.free_size() << " read size:" << n << std::endl;
-        memcpy(in_buf_.write_head(), read_buf, n);
-        in_buf_.commit(n);
+        in_buf_.write(read_buf, n);
         bzero(read_buf, sizeof(read_buf));
         MUX_DEBUG("in_buf capacity:{0} size:{1} free_size:{2}", in_buf_.capacity(), in_buf_.size(), in_buf_.free_size());
 
@@ -157,17 +156,25 @@ void MuxSocket::HandleRead() {
         while (in_buf_.size() >= PACKET_HEAD_SIZE) {
             // just read head, no need consume
             packet_header header;
-            memcpy(&header, in_buf_.read_head(), PACKET_HEAD_SIZE);
+            in_buf_.peak(&header, PACKET_HEAD_SIZE);
+
+            /*
+            std::cout << "read header packet_len:" << (uint32_t)header.packet_len << std::endl;
+            std::cout << "read header binary_protocol:" << (uint32_t)header.binary_protocol << std::endl;
+            std::cout << "read header priority:" << (uint32_t)header.priority << std::endl;
+            */
+
             // check packet_len is legal
             if (header.packet_len <= 0 || header.packet_len > PACKET_LEN_MAX) {
                 MUX_WARN("packet header invalid, read packet len:{0}, close this fd:{1}",  header.packet_len, fd_);
                 Close();
                 return;
             }
+            MUX_DEBUG("packet header ok, len:{0}", header.packet_len);
             if (in_buf_.size() >= (PACKET_HEAD_SIZE + header.packet_len)) {
                 // at list one whole packet
-                mux::PacketPtr packet = std::make_shared<mux::Packet>(in_buf_.read_head(), PACKET_HEAD_SIZE + header.packet_len);
-                in_buf_.consume(PACKET_HEAD_SIZE + header.packet_len);
+                mux::PacketPtr packet = std::make_shared<mux::Packet>(PACKET_HEAD_SIZE + header.packet_len);
+                in_buf_.read((void*)packet->data(), PACKET_HEAD_SIZE + header.packet_len);
                 MUX_DEBUG("in_buf capacity:{0} size:{1} free_size:{2}", in_buf_.capacity(), in_buf_.size(), in_buf_.free_size());
 
                 // using callback or using virtual function both is ok

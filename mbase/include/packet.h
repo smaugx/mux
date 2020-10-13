@@ -25,6 +25,7 @@ using PMessagePtr = std::shared_ptr<PMessage>;
 class Packet {
 public:
     Packet();
+    Packet(const uint16_t capacity);
     Packet(const std::string& body);
     Packet(const std::string& body, uint8_t binary_protocol, uint8_t priority);
     Packet(const PMessage& protobuf_msg);

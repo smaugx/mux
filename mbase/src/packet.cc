@@ -19,6 +19,20 @@ Packet::Packet() {
     std::copy_n((uint8_t*)&header, PACKET_HEAD_SIZE, std::back_inserter(data_));
 }
 
+Packet::Packet(uint16_t capacity) {
+    packet_header header;
+    header.packet_len = 0;
+    header.binary_protocol = kInvalidBinaryProtocol;
+    header.priority = kLowType;
+    /*
+    for (uint32_t i = 0; i < PACKET_HEAD_SIZE; ++i) {
+        data_.push_back(*((uint8_t*)(&header + i)));
+    }
+    */
+    std::copy_n((uint8_t*)&header, PACKET_HEAD_SIZE, std::back_inserter(data_));
+    data_.resize(capacity);
+}
+
 Packet::Packet(const std::string& body) {
     packet_header header;
     header.packet_len = body.size();
@@ -167,8 +181,6 @@ uint16_t Packet::append_body (const std::string& data) {
 
 template<>
 PMessagePtr Packet::GetMessage<PMessage>() {
-    std::cout << "get_binary_protocol = " << get_binary_protocol() << std::endl;
-    std::cout << "kProtobufBinaryProtocol = " << kProtobufBinaryProtocol << std::endl;
     if (get_binary_protocol() != kProtobufBinaryProtocol) {
         MUX_ERROR("GetMessage(protobuf) type failed:{0}", get_binary_protocol());
         return nullptr;
