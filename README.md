@@ -59,6 +59,7 @@ mkdir cbuild
 cd cbuild
 cmake ..
 make -j4
+# or make -j4 VERBOSE=1
 ```
 
 then check `cbuild/bin` or `cbuild/lib` dir.

@@ -9,7 +9,7 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
 # output build progress log
-set(CMAKE_VERBOSE_MAKEFILE OFF)
+set(CMAKE_VERBOSE_MAKEFILE ON)
 
 project(MUX CXX C)
 
@@ -27,6 +27,9 @@ endif()
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug)
 endif()
+
+find_library(LIB_PROTOBUF NAMES libprotobuf.a PATHS /usr/local/lib /usr/lib /usr/lib64 /usr/local/lib64)
+message(STATUS ${LIB_PROTOBUF})
 
 # common compiling options
 add_compile_options(

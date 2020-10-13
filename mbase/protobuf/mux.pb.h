@@ -186,13 +186,13 @@ class MuxMessage PROTOBUF_FINAL :
     kVersionFieldNumber = 1,
     kTypeFieldNumber = 2,
   };
-  // string data = 3;
+  // bytes data = 3;
   void clear_data();
   const std::string& data() const;
   void set_data(const std::string& value);
   void set_data(std::string&& value);
   void set_data(const char* value);
-  void set_data(const char* value, size_t size);
+  void set_data(const void* value, size_t size);
   std::string* mutable_data();
   std::string* release_data();
   void set_allocated_data(std::string* data);
@@ -284,7 +284,7 @@ inline void MuxMessage::set_type(::PROTOBUF_NAMESPACE_ID::uint32 value) {
   // @@protoc_insertion_point(field_set:mux.protobuf.MuxMessage.type)
 }
 
-// string data = 3;
+// bytes data = 3;
 inline void MuxMessage::clear_data() {
   data_.ClearToEmpty(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
 }
@@ -320,7 +320,7 @@ inline void MuxMessage::set_data(const char* value) {
               GetArena());
   // @@protoc_insertion_point(field_set_char:mux.protobuf.MuxMessage.data)
 }
-inline void MuxMessage::set_data(const char* value,
+inline void MuxMessage::set_data(const void* value,
     size_t size) {
   
   data_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(
