@@ -11,11 +11,6 @@ Packet::Packet() {
     header.packet_len = 0;
     header.binary_protocol = kInvalidBinaryProtocol;
     header.priority = kLowType;
-    /*
-    for (uint32_t i = 0; i < PACKET_HEAD_SIZE; ++i) {
-        data_.push_back(*((uint8_t*)(&header + i)));
-    }
-    */
     std::copy_n((uint8_t*)&header, PACKET_HEAD_SIZE, std::back_inserter(data_));
 }
 
@@ -24,11 +19,6 @@ Packet::Packet(uint16_t capacity) {
     header.packet_len = 0;
     header.binary_protocol = kInvalidBinaryProtocol;
     header.priority = kLowType;
-    /*
-    for (uint32_t i = 0; i < PACKET_HEAD_SIZE; ++i) {
-        data_.push_back(*((uint8_t*)(&header + i)));
-    }
-    */
     std::copy_n((uint8_t*)&header, PACKET_HEAD_SIZE, std::back_inserter(data_));
     data_.resize(capacity);
 }
@@ -38,11 +28,6 @@ Packet::Packet(const std::string& body) {
     header.packet_len = body.size();
     header.binary_protocol = kInvalidBinaryProtocol;
     header.priority = kLowType;
-    /*
-    for (uint32_t i = 0; i < PACKET_HEAD_SIZE; ++i) {
-        data_.push_back(*((uint8_t*)(&header + i)));
-    }
-    */
     std::copy_n((uint8_t*)&header, PACKET_HEAD_SIZE, std::back_inserter(data_));
     std::copy(body.begin(), body.end(), std::back_inserter(data_));
 }
@@ -52,11 +37,6 @@ Packet::Packet(const std::string& body, uint8_t binary_protocol, uint8_t priorit
     header.packet_len = body.size();
     header.binary_protocol = binary_protocol;
     header.priority = priority;
-    /*
-    for (uint32_t i = 0; i < PACKET_HEAD_SIZE; ++i) {
-        data_.push_back(*((uint8_t*)(&header + i)));
-    }
-    */
     std::copy_n((uint8_t*)&header, PACKET_HEAD_SIZE, std::back_inserter(data_));
     std::copy(body.begin(), body.end(), std::back_inserter(data_));
 }
@@ -71,32 +51,11 @@ Packet::Packet(const PMessage& protobuf_msg) {
     header.priority = kLowType;
     std::copy_n((uint8_t*)&header, PACKET_HEAD_SIZE, std::back_inserter(data_));
 
-    /*
-    packet_header assert_header;
-    memcpy(&assert_header, data_.data(), PACKET_HEAD_SIZE);
-    std::cout << "assert_header.packet_len = " << (uint32_t)assert_header.packet_len << std::endl;
-    std::cout << "assert_header.binary_protocol = " << (uint32_t)assert_header.binary_protocol << std::endl;
-    std::cout << "assert_header.priority = " << (uint32_t)assert_header.priority << std::endl;
-    assert(assert_header.packet_len ==  body.size());
-    assert(assert_header.binary_protocol == kProtobufBinaryProtocol);
-    assert(assert_header.priority == kLowType);
-    */
-
     std::copy(body.begin(), body.end(), std::back_inserter(data_));
 }
 
 Packet::Packet(const uint8_t* data, uint32_t size) {
     std::copy_n(data, size, std::back_inserter(data_));
-
-    /*
-    std::string body_data((char*)body(), body_size());
-    packet_header assert_header;
-    memcpy(&assert_header, data_.data(), PACKET_HEAD_SIZE);
-    std::cout << "assert_header.packet_len = " << (uint32_t)assert_header.packet_len << std::endl;
-    std::cout << "assert_header.binary_protocol = " << (uint32_t)assert_header.binary_protocol << std::endl;
-    std::cout << "assert_header.priority = " << (uint32_t)assert_header.priority << std::endl;
-    std::cout << "body:" << body_data << std::endl;
-    */
 }
 
 const uint8_t* Packet::data() const {
