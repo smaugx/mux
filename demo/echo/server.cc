@@ -68,7 +68,7 @@ int main(int argc, char* argv[]) {
 
 
     // create and init EventTrigger
-    int ep_num = 4;
+    int ep_num = 8;
     std::shared_ptr<transport::EventTrigger> event_trigger = std::make_shared<transport::EventTrigger>(ep_num);
     auto accept_callback = [&](int32_t cli_fd, const std::string& remote_ip, uint16_t remote_port) -> transport::BasicSocket* {
         return echo_tcp_acceptor->OnSocketAccept(cli_fd, remote_ip, remote_port);

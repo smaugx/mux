@@ -122,6 +122,7 @@ void EpollReactor::RegisterOnAcceptCallback(callback_accept_t callback) {
 void EpollReactor::OnSocketAccept(void* ptr) {
     SocketBase* sock = static_cast<SocketBase*>(ptr);
     int32_t handle = sock->GetDescriptor();
+    uint32_t accept_connections = 0;
     // epoll working on et mode, must read all coming data
     while (true) {
         struct sockaddr_in in_addr;
@@ -130,7 +131,11 @@ void EpollReactor::OnSocketAccept(void* ptr) {
         int cli_fd = accept(handle, (struct sockaddr*)&in_addr, &in_len);
         if (cli_fd == -1) {
             if ( (errno == EAGAIN) || (errno == EWOULDBLOCK) ) {
-                MUX_INFO("eid:{0} accept all coming connections success", eid_);
+                if (accept_connections > 0) {
+                    MUX_INFO("eid:{0} accept all coming connections success", eid_);
+                } else {
+                    MUX_WARN("eid:{0} accept error, thundering herd happened", eid_);
+                }
                 break;
             } else {
                 MUX_ERROR("eid:{0} accept error", eid_);
@@ -171,6 +176,7 @@ void EpollReactor::OnSocketAccept(void* ptr) {
         if (rd < 0 ) {
             new_sock->Close();
         }
+        accept_connections += 1;
     } // end while(true)
 }
 
