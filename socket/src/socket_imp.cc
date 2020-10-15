@@ -110,8 +110,8 @@ void MuxSocket::HandleRead() {
     }
     if (n == 0) {
         // this may happen when client close socket. EPOLLRDHUP usually handle this, but just make sure; should close this fd
-        MUX_ERROR("peer maybe closed, will close this fd:{0}.", fd_);
         Close();
+        MUX_ERROR("peer maybe closed, will close this fd:{0}.", fd_);
         return;
     }
 
