@@ -12,6 +12,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <cassert>
+#include <ctime>
 
 #include <iostream>
 
@@ -23,6 +24,31 @@ namespace transport {
 
 static const uint32_t kEpollWaitTime = 10; // 10 ms
 static const uint32_t kMaxEvents = 100;
+
+std::string time_point_to_string(std::chrono::system_clock::time_point &tp)
+{
+    using namespace std;
+    using namespace std::chrono;
+
+    auto ttime_t = system_clock::to_time_t(tp);
+    auto tp_sec = system_clock::from_time_t(ttime_t);
+    milliseconds ms = duration_cast<milliseconds>(tp - tp_sec);
+
+    std::tm * ttm = localtime(&ttime_t);
+
+    char date_time_format[] = "%Y.%m.%d %H:%M:%S";
+
+    char time_str[] = "yyyy.mm.dd.HH-MM.SS.fff";
+
+    strftime(time_str, strlen(time_str), date_time_format, ttm);
+
+    string result(time_str);
+    result.append(".");
+    result.append(to_string(ms.count()));
+
+    return result;
+}
+
 
 EpollReactor::EpollReactor() {
     int r = CreateEpoll();
@@ -150,9 +176,11 @@ void EpollReactor::OnSocketAccept(void* ptr) {
             MUX_WARN("getpeername error in fd:{0}", cli_fd);
             continue;
         }
+        auto now_time = std::chrono::system_clock::now();
+        auto now_time_str = time_point_to_string(now_time);
         std::string remote_ip(inet_ntoa(in_addr.sin_addr));
         uint16_t remote_port = in_addr.sin_port;
-        MUX_DEBUG("eid:{0} accept connection from {1}:{2}",eid_, remote_ip, remote_port);
+        MUX_DEBUG("eid:{0} accept connection from {1}:{2} time:{3}",eid_, remote_ip, remote_port, now_time_str);
         fprintf(stdout, "accept connection from %s:%u\n", remote_ip.c_str(), remote_port);
         fflush(stdout);
         int mr = MakeSocketNonBlock(cli_fd);
