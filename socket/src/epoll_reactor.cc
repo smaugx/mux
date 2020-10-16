@@ -15,6 +15,7 @@
 #include <ctime>
 
 #include <iostream>
+#include <functional>
 
 #include "mbase/include/mux_log.h"
 
@@ -232,6 +233,7 @@ void EpollReactor::EpollLoop() {
         return;
     }
     while (!shutdown_flag_) {
+        //MUX_DEBUG("EpollLoop alive:{0}", std::hash<std::thread::id>{}(std::this_thread::get_id()));
         int num = epoll_wait(efd_, alive_events, kMaxEvents, kEpollWaitTime);
 
         for (int i = 0; i < num; ++i) {
