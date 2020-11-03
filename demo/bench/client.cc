@@ -14,11 +14,11 @@
 using namespace mux;
 
 int main(int argc, char* argv[]) {
-    spdlog::set_level(spdlog::level::debug); // Set global log level to debug
+    spdlog::set_level(spdlog::level::warn); // Set global log level to debug
     // Set the default logger to file logger
     auto file_logger = spdlog::basic_logger_mt("basic_logger", "log/client.log");
     spdlog::set_default_logger(file_logger);
-    file_logger->flush_on(spdlog::level::debug);
+    file_logger->flush_on(spdlog::level::warn);
 
     MUX_DEBUG("log init");
 
@@ -61,32 +61,28 @@ int main(int argc, char* argv[]) {
     std::cout << "############tcp_client started! connected to ["<< server_ip << ":" << server_port << "] ################\n" << std::endl;
     MUX_INFO("############tcp_client started!################");
 
-    uint32_t send_total = 1000000;
-    auto start = std::chrono::system_clock::now();
-    std::string msg(200, 'b');
-    PMessage pmsg;
-    pmsg.set_data(msg);
-    auto packet = std::make_shared<Packet>(pmsg);
-    //for (uint32_t i = 0; i < send_total; ++i) {
-    uint32_t send_num = 0;
-    while (true) {
-        uint16_t random_priority = send_num % (mux::kMaxPacketPriority +1);
-        packet->set_priority(random_priority);
-        tcp_client->SendData(packet);
-        //std::this_thread::sleep_for(std::chrono::microseconds(1)); // ms
+    std::vector<uint32_t> body_size_list = {200, 500}; // 200B, 500B, 1024B, 1500B...
+    for (auto item : body_size_list) {
+        std::cout << "benchmark: packet body size = " << item << std::endl;
+        std::string msg(item, 'b');
+        PMessage pmsg;
+        pmsg.set_data(msg);
+        auto packet = std::make_shared<Packet>(pmsg);
+        uint32_t send_num = 0;
+        while (send_num < 5000000) {
+            uint16_t random_priority = send_num % (mux::kMaxPacketPriority +1);
+            packet->set_priority(random_priority);
+            tcp_client->SendData(packet);
+            //std::this_thread::sleep_for(std::chrono::microseconds(1)); // ms
 
-        send_num += 1;
-    }
-    auto end = std::chrono::system_clock::now();
-    std::chrono::duration<double> diff = end - start;
-    std::cout << "send "<< send_total << " packets,time takes:" << diff.count() << std::endl;
-    std::cout << "recv total:" << recv_num << std::endl;
+            send_num += 1;
+        }
 
-    while (true) {
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        std::cout << "benchmark: packet body size = " << item << " done. (sleep 10 seconds for next benchmark)"<< std::endl;
+        std::this_thread::sleep_for(std::chrono::seconds(10));
     }
 
-
+    std::cout << "all benchmark done" << std::endl;
     event_trigger->Stop();
     delete tcp_client;
 

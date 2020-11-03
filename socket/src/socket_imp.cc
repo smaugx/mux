@@ -105,13 +105,13 @@ void MuxSocket::HandleRead() {
         }
         // something goes wrong for this fd, should close it
         Close();
-        MUX_ERROR("something goes wrong, will close this fd:{0}.", fd_);
+        MUX_ERROR("something goes wrong, will close this fd:{0} errno:{1}", fd_, errno);
         return;
     }
     if (n == 0) {
         // this may happen when client close socket. EPOLLRDHUP usually handle this, but just make sure; should close this fd
         Close();
-        MUX_ERROR("peer maybe closed, will close this fd:{0}.", fd_);
+        MUX_ERROR("peer maybe closed, will close this fd:{0} errno:{1}", fd_, errno);
         return;
     }
 
@@ -124,6 +124,7 @@ void MuxSocket::HandleWrite() {
 }
 
 void MuxSocket::HandleError() {
+    MUX_WARN("handle error, fd:{0}", fd_);
     Close();
 }
 
@@ -163,7 +164,7 @@ int32_t MuxSocket::SendData(const PacketPtr& packet) {
         }
         // error happend
         Close();
-        MUX_ERROR("write error, will close this fd:{0}", fd_);
+        MUX_ERROR("write error, will close this fd:{0} errno:{1}", fd_, errno);
         return -1;
     }
     MUX_DEBUG("write size:{0} in fd:{1} ok", r, fd_);

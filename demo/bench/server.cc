@@ -21,7 +21,7 @@ int main(int argc, char* argv[]) {
     // Set the default logger to file logger
     auto file_logger = spdlog::basic_logger_mt("basic_logger", "log/bench_server.log");
     spdlog::set_default_logger(file_logger);
-    file_logger->flush_on(spdlog::level::err);
+    file_logger->flush_on(spdlog::level::warn);
 
     MUX_DEBUG("log init");
 
