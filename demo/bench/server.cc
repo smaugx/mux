@@ -44,6 +44,7 @@ int main(int argc, char* argv[]) {
 
 
     std::atomic<uint32_t> recv_num {0};
+    std::atomic<uint64_t> recv_bytes {0};
     auto recv_call = [&](const PacketPtr& packet) -> void {
         PMessagePtr message = packet->GetMessage<PMessage>();
         if (!message) {
@@ -54,6 +55,7 @@ int main(int argc, char* argv[]) {
 
         //tcp_bench_server->SendData(packet);
         recv_num += 1;
+        recv_bytes += packet->size();
         return;
     };
 
@@ -91,6 +93,7 @@ int main(int argc, char* argv[]) {
 
     while (true) {
         uint32_t old_recv = recv_num.load();
+        uint64_t old_recv_bytes = recv_bytes.load();
 
         auto start = std::chrono::system_clock::now();
         std::this_thread::sleep_for(std::chrono::seconds(5));
@@ -100,6 +103,10 @@ int main(int argc, char* argv[]) {
         uint32_t step_recv = recv_num.load() - old_recv;
         double rate = step_recv / diff.count() * 1000 * 1000;
         std::cout << "total:" << recv_num << " step_recv:" << step_recv << " diff:" << diff.count() << " us" << " rate:" << rate << " tps" << std::endl;
+
+        uint64_t step_recv_bytes = recv_bytes.load() - old_recv_bytes;
+        double rate_bytes = step_recv_bytes / 1024.0 / 1024.0 / diff.count() * 1000 * 1000;
+        std::cout << "total bytes:" << recv_bytes << " step_recv_bytes:" << step_recv_bytes << " diff:" << diff.count() << " us" << " rate_bytes:" << rate_bytes << " MB/s" << std::endl;
 
     }
     std::cout << "exit, wait clean..." << std::endl;

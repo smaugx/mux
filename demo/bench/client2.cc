@@ -55,15 +55,17 @@ void multi_create_client(uint32_t clients, const std::string& server_ip, uint16_
     for (uint32_t i = 0; i < clients; ++i) {
         bench::BenchTcpClient* new_client = create_client(server_ip, server_port);
         if (new_client) {
-            clients_vec.push_back(new_client);
+            //clients_vec.push_back(new_client);
         }
     }
 
     std::cout << "successfully create " << clients_vec.size() << " clients" << std::endl;
 
+    /*
     while (true) {
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
+    */
 }
 
 int main(int argc, char* argv[]) {

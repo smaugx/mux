@@ -73,7 +73,7 @@ int32_t TcpClient::Connect(int32_t cli_fd) {
 
     int r = ::connect(cli_fd, (struct sockaddr*)&addr, sizeof(addr));
     if ( r < 0) {
-        MUX_ERROR("connect {0} {1} failed!", remote_ip_, remote_ip_);
+        MUX_ERROR("connect {0} {1} failed!, errno:{2}", remote_ip_, remote_ip_, errno);
         return -1;
     }
 
