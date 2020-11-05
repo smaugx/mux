@@ -69,11 +69,13 @@ int main(int argc, char* argv[]) {
         pmsg.set_data(msg);
         auto packet = std::make_shared<Packet>(pmsg);
         uint32_t send_num = 0;
-        while (send_num < 5000000) {
+        while (send_num < 20000000) {
             uint16_t random_priority = send_num % (mux::kMaxPacketPriority +1);
             packet->set_priority(random_priority);
             tcp_client->SendData(packet);
-            //std::this_thread::sleep_for(std::chrono::microseconds(1)); // ms
+	    if (send_num % 100 == 0) {
+                std::this_thread::sleep_for(std::chrono::microseconds(1)); // ms
+	    }
 
             send_num += 1;
         }
