@@ -106,7 +106,7 @@ int main(int argc, char* argv[]) {
 
         uint64_t step_recv_bytes = recv_bytes.load() - old_recv_bytes;
         double rate_bytes = step_recv_bytes / 1024.0 / 1024.0 / diff.count() * 1000 * 1000;
-        std::cout << "total bytes:" << recv_bytes << " step_recv_bytes:" << step_recv_bytes << " diff:" << diff.count() << " us" << " rate_bytes:" << rate_bytes << " MB/s" << std::endl;
+        std::cout << "total bytes:" << recv_bytes << " step_recv_bytes:" << step_recv_bytes << " diff:" << diff.count() << " us avg_size:" << step_recv_bytes / diff.count() * 1000 * 1000 / rate << " Byte  rate_bytes:" << rate_bytes << " MB/s" << std::endl;
 
     }
     std::cout << "exit, wait clean..." << std::endl;
