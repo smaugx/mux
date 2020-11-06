@@ -55,7 +55,7 @@ void multi_create_client(uint32_t clients, const std::string& server_ip, uint16_
     for (uint32_t i = 0; i < clients; ++i) {
         bench::BenchTcpClient* new_client = create_client(server_ip, server_port);
         if (new_client) {
-            //clients_vec.push_back(new_client);
+            clients_vec.push_back(new_client);
         }
     }
 
@@ -63,9 +63,15 @@ void multi_create_client(uint32_t clients, const std::string& server_ip, uint16_
 
     /*
     while (true) {
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        std::this_thread::sleep_for(std::chrono::seconds(10));
     }
     */
+
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+    for (auto& client : clients_vec) {
+        std::cout << "delete client:" << client->GetLocalIp() << ":" << client->GetLocalPort() << std::endl;
+        delete client;
+    }
 }
 
 int main(int argc, char* argv[]) {
@@ -94,21 +100,25 @@ int main(int argc, char* argv[]) {
         threads = std::atoi(argv[4]);
     }
 
-    auto step_clients = clients / threads;
-    auto left_clients = clients % threads;
-    if (left_clients > 0) {
-        threads += 1;
-    }
-    for (uint32_t i = 0; i < threads; ++i) {
-        std::cout << "start thread:" << i << std::endl;
-        auto clients_num = step_clients;
-        if (i == threads -1 && left_clients > 0) {
-            clients_num = left_clients;
+    for (uint32_t n = 0; n < 100; ++n) {
+        auto step_clients = clients / threads;
+        auto left_clients = clients % threads;
+        if (left_clients > 0) {
+            threads += 1;
         }
-        auto th = std::thread(multi_create_client, clients_num, server_ip, server_port);
-        th.detach();
+        for (uint32_t i = 0; i < threads; ++i) {
+            std::cout << "start thread:" << i << std::endl;
+            auto clients_num = step_clients;
+            if (i == threads -1 && left_clients > 0) {
+                clients_num = left_clients;
+            }
+            auto th = std::thread(multi_create_client, clients_num, server_ip, server_port);
+            th.detach();
+        }
+        std::cout << "start all thread done" << std::endl;
+        std::this_thread::sleep_for(std::chrono::seconds(3));
     }
-    std::cout << "start all thread done" << std::endl;
+
 
     while (true) {
         std::this_thread::sleep_for(std::chrono::seconds(1));

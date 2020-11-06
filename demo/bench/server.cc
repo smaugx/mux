@@ -69,7 +69,7 @@ int main(int argc, char* argv[]) {
     bench_tcp_acceptor->RegisterNewSocketRecvCallback(dispath_call);
 
     // create and init EventTrigger
-    int ep_num = 4;
+    int ep_num = 8;
     std::shared_ptr<transport::EventTrigger> event_trigger = std::make_shared<transport::EventTrigger>(ep_num);
     auto accept_callback = [&](int32_t cli_fd, const std::string& remote_ip, uint16_t remote_port) -> transport::BasicSocket* {
         return bench_tcp_acceptor->OnSocketAccept(cli_fd, remote_ip, remote_port);
@@ -84,6 +84,7 @@ int main(int argc, char* argv[]) {
 
     // attention: RegisterDescriptor must after Start
     event_trigger->RegisterOnAcceptCallback(accept_callback);
+    //event_trigger->RegisterDescriptor((void*)bench_tcp_acceptor, EPOLLIN | EPOLLRDHUP | EPOLLET | EPOLLEXCLUSIVE);
     event_trigger->RegisterDescriptor((void*)bench_tcp_acceptor);
 
     std::cout << "############tcp_echo_server[" << bench_tcp_acceptor->GetLocalIp() << ":" << bench_tcp_acceptor->GetLocalPort()  << "] started!################\n" << std::endl;

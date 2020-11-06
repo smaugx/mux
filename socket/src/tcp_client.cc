@@ -57,7 +57,7 @@ bool TcpClient::Start() {
 int32_t TcpClient::CreateSocket() {
     int cli_fd = ::socket(AF_INET, SOCK_STREAM, 0);
     if (cli_fd < 0) {
-        MUX_ERROR("create socket failed!");
+        MUX_ERROR("create socket failed!, errno:{0}", errno);
         return -1;
     }
 

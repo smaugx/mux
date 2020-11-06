@@ -87,6 +87,22 @@ int32_t TcpAcceptor::CreateSocket() {
         return -1;
     }
 
+    /*
+    // add reuseport
+    int ret = 0;
+    int reuse = 1;
+    ret = setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR,(const void *)&reuse , sizeof(int));
+    if (ret < 0) {
+        perror("setsockopt");
+	return -1;
+    }
+    ret = setsockopt(listenfd, SOL_SOCKET, SO_REUSEPORT,(const void *)&reuse , sizeof(int));
+    if (ret < 0) {
+        perror("setsockopt");
+	return -1;
+    }
+    */
+
     struct sockaddr_in addr;
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;

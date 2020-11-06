@@ -61,7 +61,7 @@ int main(int argc, char* argv[]) {
     std::cout << "############tcp_client started! connected to ["<< server_ip << ":" << server_port << "] ################\n" << std::endl;
     MUX_INFO("############tcp_client started!################");
 
-    std::vector<uint32_t> body_size_list = {200, 500, 1024}; // 200B, 500B, 1024B, 1500B...
+    std::vector<uint32_t> body_size_list = {500, 1024}; // 200B, 500B, 1024B, 1500B...
     for (auto item : body_size_list) {
         std::cout << "benchmark: packet body size = " << item << std::endl;
         std::string msg(item, 'b');
@@ -74,7 +74,7 @@ int main(int argc, char* argv[]) {
             packet->set_priority(random_priority);
             tcp_client->SendData(packet);
 	    if (send_num % 100 == 0) {
-                std::this_thread::sleep_for(std::chrono::microseconds(item / 80 )); // ms
+                std::this_thread::sleep_for(std::chrono::microseconds(item / 50 )); // ms
 	    }
 
             send_num += 1;
