@@ -61,11 +61,9 @@ void multi_create_client(uint32_t clients, const std::string& server_ip, uint16_
 
     std::cout << "successfully create " << clients_vec.size() << " clients" << std::endl;
 
-    /*
     while (true) {
         std::this_thread::sleep_for(std::chrono::seconds(10));
     }
-    */
 
     std::this_thread::sleep_for(std::chrono::seconds(2));
     for (auto& client : clients_vec) {
@@ -84,7 +82,7 @@ int main(int argc, char* argv[]) {
     MUX_DEBUG("log init");
 
     std::string server_ip {"127.0.0.1"};
-    uint16_t server_port { 6666 };
+    uint16_t server_port { 10000 };
     uint32_t clients = 1; // client number
     uint32_t threads = 1; // thread number
     if (argc >= 2) {
@@ -100,7 +98,8 @@ int main(int argc, char* argv[]) {
         threads = std::atoi(argv[4]);
     }
 
-    for (uint32_t n = 0; n < 100; ++n) {
+    //for (uint32_t n = 0; n < 100; ++n) {
+    for (uint32_t n = 0; n < 1; ++n) {
         auto step_clients = clients / threads;
         auto left_clients = clients % threads;
         if (left_clients > 0) {

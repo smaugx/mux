@@ -23,7 +23,7 @@ int main(int argc, char* argv[]) {
     MUX_DEBUG("log init");
 
     std::string server_ip {"127.0.0.1"};
-    uint16_t server_port { 6666 };
+    uint16_t server_port { 10000 };
     if (argc >= 2) {
         server_ip = std::string(argv[1]);
     }
@@ -61,7 +61,7 @@ int main(int argc, char* argv[]) {
     std::cout << "############tcp_client started! connected to ["<< server_ip << ":" << server_port << "] ################\n" << std::endl;
     MUX_INFO("############tcp_client started!################");
 
-    std::vector<uint32_t> body_size_list = {500, 1024}; // 200B, 500B, 1024B, 1500B...
+    std::vector<uint32_t> body_size_list = {500, 1024, 4096, 8192}; // 200B, 500B, 1024B, 1500B...
     for (auto item : body_size_list) {
         std::cout << "benchmark: packet body size = " << item << std::endl;
         std::string msg(item, 'b');
@@ -69,12 +69,12 @@ int main(int argc, char* argv[]) {
         pmsg.set_data(msg);
         auto packet = std::make_shared<Packet>(pmsg);
         uint32_t send_num = 0;
-        while (send_num < 20000000) {
+        while (send_num < 6000000) {
             uint16_t random_priority = send_num % (mux::kMaxPacketPriority +1);
             packet->set_priority(random_priority);
             tcp_client->SendData(packet);
 	    if (send_num % 100 == 0) {
-                std::this_thread::sleep_for(std::chrono::microseconds(item / 50 )); // ms
+                std::this_thread::sleep_for(std::chrono::microseconds(item / 20 )); // ms
 	    }
 
             send_num += 1;

@@ -24,7 +24,7 @@ int main(int argc, char* argv[]) {
     MUX_DEBUG("log init");
 
     std::string server_ip {"127.0.0.1"};
-    uint16_t server_port { 6666 };
+    uint16_t server_port { 10000 };
     if (argc >= 2) {
         server_ip = std::string(argv[1]);
     }

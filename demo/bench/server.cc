@@ -26,7 +26,7 @@ int main(int argc, char* argv[]) {
     MUX_DEBUG("log init");
 
     std::string local_ip {"127.0.0.1"};
-    uint16_t local_port { 6666 };
+    uint16_t local_port { 10000 };
     if (argc >= 2) {
         local_ip = std::string(argv[1]);
     }
