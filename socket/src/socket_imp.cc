@@ -147,16 +147,11 @@ int32_t MuxSocket::SendData(const PacketPtr& packet) {
         return -1;
     }
 
-    /*
-    packet_header h;
-    memcpy(&h, packet->data(), PACKET_HEAD_SIZE);
-    std::cout << "packet_header.packet_len = " << (uint32_t)h.packet_len << std::endl;
-    std::cout << "packet_header.binary_protocol = " << (uint32_t)h.binary_protocol << std::endl;
-    std::cout << "packet_header.priority = " << (uint32_t)h.priority << std::endl;
-    */
+		return SendBinary(packet->data(), packet->size());
 
-    // send header + body
-    int r = ::write(fd_, packet->data(), packet->size());
+
+		/*
+    int r = ::write(fd_, packet->data() + send_bytes, packet->size() - send_bytes);
     if (r == -1) {
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
             MUX_INFO("send {0} bytes finished", packet->size());
@@ -169,6 +164,58 @@ int32_t MuxSocket::SendData(const PacketPtr& packet) {
     }
     MUX_DEBUG("write size:{0} in fd:{1} ok", r, fd_);
     return r;
+		*/
+}
+
+int32_t MuxSocket::SendBinary(const char *data, uint32_t size) {
+    if (closed_) {
+        MUX_ERROR("socket closed, not ready for send");
+        return -1;
+    }
+    if (size <= 0 || size > RINGBUF_OUT_SIZE) {
+        MUX_WARN("packet invalid body_size:{1}", size);
+        return -1;
+    }
+		if (out_buf_->size() > 0) {
+        MUX_INFO("send failed, send cache not empty, remain {0} bytes", out_buf_->size());
+        return -1;
+		}
+
+		int r = -1;
+		uint32_t send_bytes = 0;
+		while (true) {
+        // send header + body
+        r = ::write(fd_, data + send_bytes, size - send_bytes);
+		    if (r > 0) {
+		    	if (r == (size - send_bytes)) {
+		    		MUX_DEBUG("write size:{0} in fd:{1} ok", r, fd_);
+		    		return r;
+		    	} else {
+						// wait next while loop 
+						send_bytes += r;
+						MUX_DEBUG("write part size:{0}, remain {1} bytes", send_bytes, size - send_bytes);
+					}
+		    } else if (r == 0){
+					  // something goes wrong maybe
+						Close();
+						MUX_ERROR("write error, will close this fd:{0} errno:{1}", fd_, errno);
+						return -1;
+				} else { // r == -1
+            if (errno == EAGAIN || errno == EWOULDBLOCK) {
+								// write to out_ringbuffer for next epollout, then send again 
+								out_buf_.write(data + send_bytes, size - send_bytes);
+                MUX_INFO("send {0} bytes finished, remain {1} bytes to send next time, write to cache", r, size - r);
+                return -1;
+            }
+					  // something goes wrong maybe
+						Close();
+						MUX_ERROR("write error, will close this fd:{0} errno:{1}", fd_, errno);
+						return -1;
+				}
+		} // end while (true)...
+		
+		// should not come here
+		return -1;
 }
 
 void MuxSocket::Close() {

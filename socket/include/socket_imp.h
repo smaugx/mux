@@ -17,6 +17,8 @@ namespace transport {
 static const int32_t ERR_EVENT   = -1;
 static const int32_t READ_EVENT  = 0;
 static const int32_t WRITE_EVENT = 1;
+static const uint32_t RINGBUF_IN_SIZE = 20 * 1024; // 20KB
+static const uint32_t RINGBUF_OUT_SIZE = 20 * 1024; // 20KB
 
 using RingBuffer =  transport::ring_buffer_s;
 
@@ -123,6 +125,7 @@ public:
 protected:
     // handle recv data, rewrite this function of yourself
     virtual int32_t HandleRecvData(const PacketPtr& packet);
+		int32_t SendBinary(const char *data, uint32_t size);
 
 protected:
     int fd_ { -1 };
@@ -132,8 +135,8 @@ protected:
     uint16_t remote_port_ { 0 };
     bool closed_ { true };
     callback_recv_t callback_;
-    RingBuffer in_buf_ { 4096 };  // recv data buffer
-    RingBuffer out_buf_{ 4096 }; // send data buffer
+    RingBuffer in_buf_ { RINGBUF_IN_SIZE };  // recv data buffer
+    RingBuffer out_buf_{ RINGBUF_OUT_SIZE }; // send data buffer
 };
 
 } // end namespace transport
