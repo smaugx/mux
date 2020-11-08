@@ -125,7 +125,7 @@ public:
 protected:
     // handle recv data, rewrite this function of yourself
     virtual int32_t HandleRecvData(const PacketPtr& packet);
-		int32_t SendBinary(const char *data, uint32_t size);
+    int32_t SendBinary(const uint8_t *data, uint32_t size);
 
 protected:
     int fd_ { -1 };
