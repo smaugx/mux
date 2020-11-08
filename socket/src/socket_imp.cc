@@ -147,11 +147,9 @@ int32_t MuxSocket::SendData(const PacketPtr& packet) {
         return -1;
     }
 
-    return SendBinary(packet->data(), packet->size());
+    //return SendBinary(packet->data(), packet->size());
 
-
-    /*
-    int r = ::write(fd_, packet->data() + send_bytes, packet->size() - send_bytes);
+    int r = ::write(fd_, packet->data(), packet->size());
     if (r == -1) {
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
             MUX_INFO("send {0} bytes finished", packet->size());
@@ -164,7 +162,6 @@ int32_t MuxSocket::SendData(const PacketPtr& packet) {
     }
     MUX_DEBUG("write size:{0} in fd:{1} ok", r, fd_);
     return r;
-    */
 }
 
 int32_t MuxSocket::SendBinary(const uint8_t *data, uint32_t size) {
