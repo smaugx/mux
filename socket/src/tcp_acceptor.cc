@@ -158,11 +158,13 @@ BasicSocket* TcpAcceptor::ManageNewConnection(BasicSocket* new_sock) {
         MUX_WARN("new_socket_recv_callback_ not ready, handle recv failed");
     }
 
+    /*
     {
         std::unique_lock<std::mutex> lock(connection_vec_mutex_);
         connection_vec_.push_back(new_sock);
         MUX_INFO("add new connection {0}:{1}", new_sock->GetRemoteIp(), new_sock->GetRemotePort());
     }
+    */
 
     return new_sock;
 }
@@ -174,10 +176,16 @@ BasicSocket* TcpAcceptor::OnSocketAccept(int32_t cli_fd, const std::string& remo
         return nullptr;
     }
 
+
     // handle your session here
     
-
     return ManageNewConnection(new_sock);
+}
+
+void TcpAcceptor::OnSocketErr(BasicSocket* sock) {
+    MuxSocket* new_sock = dynamic_cast<MuxSocket*>(sock);
+    delete new_sock;
+    new_sock = nullptr;
 }
 
 

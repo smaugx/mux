@@ -74,6 +74,10 @@ int main(int argc, char* argv[]) {
     auto accept_callback = [&](int32_t cli_fd, const std::string& remote_ip, uint16_t remote_port) -> transport::BasicSocket* {
         return bench_tcp_acceptor->OnSocketAccept(cli_fd, remote_ip, remote_port);
     };
+    auto sockerr_callback = [&](transport::BasicSocket* sock) -> void {
+        bench_tcp_acceptor->OnSocketErr(sock);
+    };
+
     event_trigger->Start();
 
     if (!bench_tcp_acceptor->Start()) {
@@ -84,6 +88,7 @@ int main(int argc, char* argv[]) {
 
     // attention: RegisterDescriptor must after Start
     event_trigger->RegisterOnAcceptCallback(accept_callback);
+    event_trigger->RegisterOnSocketErrCallback(sockerr_callback);
     //event_trigger->RegisterDescriptor((void*)bench_tcp_acceptor, EPOLLIN | EPOLLRDHUP | EPOLLET | EPOLLEXCLUSIVE);
     event_trigger->RegisterDescriptor((void*)bench_tcp_acceptor);
 

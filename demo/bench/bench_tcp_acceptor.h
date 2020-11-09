@@ -17,6 +17,7 @@ public:
 
 public:
     transport::BasicSocket* OnSocketAccept(int32_t cli_fd, const std::string& remote_ip, uint16_t remote_port) override;
+    void OnSocketErr(transport::BasicSocket* sock) override;
     transport::BasicSocket* FindSession(const std::string& ip_port);
 
 private:

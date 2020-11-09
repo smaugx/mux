@@ -50,6 +50,7 @@ public:
 public:
     void RegisterNewSocketRecvCallback(callback_recv_t callback);
     virtual BasicSocket* OnSocketAccept(int32_t cli_fd, const std::string& remote_ip, uint16_t remote_port);
+    virtual void OnSocketErr(BasicSocket* sock);
 
 protected:
     int32_t CreateSocket();
