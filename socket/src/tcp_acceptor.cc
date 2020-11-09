@@ -134,7 +134,8 @@ int32_t TcpAcceptor::MakeSocketNonBlock(int32_t fd) {
 }
 
 int32_t TcpAcceptor::Listen(int32_t listenfd) {
-    int r = ::listen(listenfd, SOMAXCONN);
+    //int r = ::listen(listenfd, SOMAXCONN);
+    int r = ::listen(listenfd, 8192);
     if ( r < 0) {
         MUX_ERROR("listen failed");
         return -1;
