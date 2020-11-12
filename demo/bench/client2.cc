@@ -53,7 +53,7 @@ bench::BenchTcpClient* create_client(const std::string& server_ip, uint16_t serv
     return tcp_client;
 }
 
-void multi_create_client(uint32_t clients, const std::string& server_ip, uint16_t server_port) {
+void multi_create_client(uint32_t clients, const std::string& server_ip, uint16_t server_port, bool close=true) {
     std::vector<bench::BenchTcpClient*> clients_vec;
     for (uint32_t i = 0; i < clients; ++i) {
         bench::BenchTcpClient* new_client = create_client(server_ip, server_port);
@@ -64,11 +64,12 @@ void multi_create_client(uint32_t clients, const std::string& server_ip, uint16_
 
     //std::cout << "successfully create " << clients_vec.size() << " clients" << std::endl;
 
-    /*
-    while (true) {
-        std::this_thread::sleep_for(std::chrono::seconds(10));
+    if (!close) {
+        while (true) {
+            std::this_thread::sleep_for(std::chrono::seconds(10));
+        }
+	return;
     }
-    */
 
     std::this_thread::sleep_for(std::chrono::seconds(2));
     for (auto& client : clients_vec) {
@@ -92,7 +93,7 @@ void run(const std::string& server_ip, uint16_t server_port, uint32_t clients, u
             if (i == threads -1 && left_clients > 0) {
                 clients_num = left_clients;
             }
-            auto th = std::thread(multi_create_client, clients_num, server_ip, server_port);
+            auto th = std::thread(multi_create_client, clients_num, server_ip, server_port, loop==1?false:true);
             th.detach();
         }
         //std::cout << "start all thread done" << std::endl;
