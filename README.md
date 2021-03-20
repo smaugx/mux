@@ -1,8 +1,6 @@
 # mux
 Modern C++ network programming library for Linux.
 
-
-
 # build
 
 first, you should get the source code:
