@@ -13,6 +13,8 @@
 
 using namespace mux;
 
+std::atomic<uint32_t> conn { 0 };
+
 bench::BenchTcpClient* create_client(const std::string& server_ip, uint16_t server_port) {
     bench::BenchTcpClient* tcp_client = new bench::BenchTcpClient(server_ip, server_port);
     if (!tcp_client) {
@@ -45,12 +47,13 @@ bench::BenchTcpClient* create_client(const std::string& server_ip, uint16_t serv
     /*
     event_trigger->RegisterDescriptor((void*)tcp_client);
     */
-    std::cout << "############tcp_client started! connected to ["<< server_ip << ":" << server_port << "] ################\n" << std::endl;
+    //std::cout << "############tcp_client started! connected to ["<< server_ip << ":" << server_port << "] ################\n" << std::endl;
     MUX_INFO("############tcp_client started!################");
+    conn += 1;
     return tcp_client;
 }
 
-void multi_create_client(uint32_t clients, const std::string& server_ip, uint16_t server_port) {
+void multi_create_client(uint32_t clients, const std::string& server_ip, uint16_t server_port, bool close=true) {
     std::vector<bench::BenchTcpClient*> clients_vec;
     for (uint32_t i = 0; i < clients; ++i) {
         bench::BenchTcpClient* new_client = create_client(server_ip, server_port);
@@ -59,22 +62,54 @@ void multi_create_client(uint32_t clients, const std::string& server_ip, uint16_
         }
     }
 
-    std::cout << "successfully create " << clients_vec.size() << " clients" << std::endl;
+    //std::cout << "successfully create " << clients_vec.size() << " clients" << std::endl;
 
-    /*
-    while (true) {
-        std::this_thread::sleep_for(std::chrono::seconds(10));
+    if (!close) {
+        while (true) {
+            std::this_thread::sleep_for(std::chrono::seconds(10));
+        }
+	return;
     }
-    */
 
     std::this_thread::sleep_for(std::chrono::seconds(2));
     for (auto& client : clients_vec) {
-        std::cout << "delete client:" << client->GetLocalIp() << ":" << client->GetLocalPort() << std::endl;
+        //std::cout << "delete client:" << client->GetLocalIp() << ":" << client->GetLocalPort() << std::endl;
         delete client;
     }
 }
 
+
+void run(const std::string& server_ip, uint16_t server_port, uint32_t clients, uint32_t threads, uint32_t loop) {
+    //for (uint32_t n = 0; n < 100; ++n) {
+    for (uint32_t n = 0; n < loop; ++n) {
+        auto step_clients = clients / threads;
+        auto left_clients = clients % threads;
+        if (left_clients > 0) {
+            threads += 1;
+        }
+        for (uint32_t i = 0; i < threads; ++i) {
+            //std::cout << "start thread:" << i << std::endl;
+            auto clients_num = step_clients;
+            if (i == threads -1 && left_clients > 0) {
+                clients_num = left_clients;
+            }
+            auto th = std::thread(multi_create_client, clients_num, server_ip, server_port, loop==1?false:true);
+            th.detach();
+        }
+        //std::cout << "start all thread done" << std::endl;
+        std::this_thread::sleep_for(std::chrono::seconds(3));
+    }
+    std::cout << "done" << std::endl;
+}
+
+
+
 int main(int argc, char* argv[]) {
+    if (argc <= 4) {
+        std::cout << "usage: ./bench_client_accept ip port connections threads llop" << std::endl;
+        std::cout << "usage: ./bench_client_accept 127.0.0.1 10000 30000 100 1" << std::endl;
+	return 0;
+    }
     // Set the default logger to file logger
     auto file_logger = spdlog::basic_logger_mt("basic_logger", "log/bench_client_accept.log");
     spdlog::set_default_logger(file_logger);
@@ -84,7 +119,7 @@ int main(int argc, char* argv[]) {
     MUX_DEBUG("log init");
 
     std::string server_ip {"127.0.0.1"};
-    uint16_t server_port { 6666 };
+    uint16_t server_port { 10000 };
     uint32_t clients = 1; // client number
     uint32_t threads = 1; // thread number
     if (argc >= 2) {
@@ -99,30 +134,27 @@ int main(int argc, char* argv[]) {
     if (argc >= 5) {
         threads = std::atoi(argv[4]);
     }
-
-    for (uint32_t n = 0; n < 100; ++n) {
-        auto step_clients = clients / threads;
-        auto left_clients = clients % threads;
-        if (left_clients > 0) {
-            threads += 1;
-        }
-        for (uint32_t i = 0; i < threads; ++i) {
-            std::cout << "start thread:" << i << std::endl;
-            auto clients_num = step_clients;
-            if (i == threads -1 && left_clients > 0) {
-                clients_num = left_clients;
-            }
-            auto th = std::thread(multi_create_client, clients_num, server_ip, server_port);
-            th.detach();
-        }
-        std::cout << "start all thread done" << std::endl;
-        std::this_thread::sleep_for(std::chrono::seconds(3));
+    uint32_t loop = 1;
+    if (argc >= 6) {
+        loop = std::atoi(argv[5]);
     }
 
+    auto th = std::thread(run, server_ip, server_port, clients, threads, loop);
+    th.detach();
 
     while (true) {
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        uint32_t old_conn = conn.load();
+
+        auto start = std::chrono::system_clock::now();
+        std::this_thread::sleep_for(std::chrono::seconds(5));
+        auto end = std::chrono::system_clock::now();
+        std::chrono::duration<double, std::micro> diff = end - start; // us
+
+        uint32_t step_conn = conn.load() - old_conn;
+        double rate = step_conn/ diff.count() * 1000 * 1000;
+        std::cout << "total:" << conn << " step_recv:" << step_conn << " diff:" << diff.count() << " us" << " rate:" << rate << " tps" << std::endl;
     }
+
 
     return 0;
 }

@@ -24,7 +24,7 @@ int main(int argc, char* argv[]) {
 
 
     std::string local_ip {"127.0.0.1"};
-    uint16_t local_port { 6666 };
+    uint16_t local_port { 10000 };
     if (argc >= 2) {
         local_ip = std::string(argv[1]);
     }
@@ -41,11 +41,15 @@ int main(int argc, char* argv[]) {
     }
 
     auto recv_call = [&](const PacketPtr& packet) -> void {
+        if (!packet) {
+            return;
+        }
         PMessagePtr message = packet->GetMessage<PMessage>();
         if (!message) {
             return;
         }
 
+        message = packet->GetMessage<PMessage>();
         auto key = packet->get_from_ip_addr() + ":" + std::to_string(packet->get_from_ip_port());
         auto sock = echo_tcp_acceptor->FindSession(key);
         if (!sock) {

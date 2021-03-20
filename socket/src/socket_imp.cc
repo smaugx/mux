@@ -30,7 +30,7 @@ MuxSocket::MuxSocket(
     : remote_ip_(remote_ip),
       remote_port_(remote_port),
       closed_(true) {
-    MUX_INFO("client create socket{0} local {1}:{2} remote {3}:{4}", fd_, local_ip_, local_port_, remote_ip_, remote_port_);
+    MUX_INFO("client create socket:{0} local {1}:{2} remote {3}:{4}", fd_, local_ip_, local_port_, remote_ip_, remote_port_);
 }
 
 MuxSocket::~MuxSocket() {
@@ -51,7 +51,7 @@ void MuxSocket::HandleRead() {
 
         // try read packet
         if (in_buf_.size() < PACKET_HEAD_SIZE) {
-            read_max_size = in_buf_.free_size();
+            read_max_size = std::min((size_t)in_buf_.free_size(), (size_t)4096);
             continue;
         }
         // size beyond packet head size
@@ -74,10 +74,10 @@ void MuxSocket::HandleRead() {
             }
             MUX_DEBUG("packet header ok, len:{0}", header.packet_len);
             if (in_buf_.size() >= (PACKET_HEAD_SIZE + header.packet_len)) {
+                MUX_DEBUG("in_buf capacity:{0} size:{1} free_size:{2}", in_buf_.capacity(), in_buf_.size(), in_buf_.free_size());
                 // at list one whole packet
                 mux::PacketPtr packet = std::make_shared<mux::Packet>(PACKET_HEAD_SIZE + header.packet_len);
                 in_buf_.read((void*)packet->data(), PACKET_HEAD_SIZE + header.packet_len);
-                MUX_DEBUG("in_buf capacity:{0} size:{1} free_size:{2}", in_buf_.capacity(), in_buf_.size(), in_buf_.free_size());
 
                 // using callback or using virtual function both is ok
                 if (callback_) {
@@ -94,7 +94,7 @@ void MuxSocket::HandleRead() {
             }
         } // end while (in_buf_.size() >= PACKET_HEAD_SIZE)
 
-        read_max_size = in_buf_.free_size();
+        read_max_size = std::min((size_t)in_buf_.free_size(), (size_t)4096);
     } // end while((n=::read(...
 
     if (n == -1) {
@@ -147,11 +147,9 @@ int32_t MuxSocket::SendData(const PacketPtr& packet) {
         return -1;
     }
 
-    return SendBinary(packet->data(), packet->size());
+    //return SendBinary(packet->data(), packet->size());
 
-
-    /*
-    int r = ::write(fd_, packet->data() + send_bytes, packet->size() - send_bytes);
+    int r = ::write(fd_, packet->data(), packet->size());
     if (r == -1) {
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
             MUX_INFO("send {0} bytes finished", packet->size());
@@ -164,7 +162,6 @@ int32_t MuxSocket::SendData(const PacketPtr& packet) {
     }
     MUX_DEBUG("write size:{0} in fd:{1} ok", r, fd_);
     return r;
-    */
 }
 
 int32_t MuxSocket::SendBinary(const uint8_t *data, uint32_t size) {

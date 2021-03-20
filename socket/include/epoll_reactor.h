@@ -32,6 +32,7 @@ public:
 public:
     void RegisterOnAcceptCallback(callback_accept_t callback);
     int32_t RegisterDescriptor(void* ptr, int events = EPOLLIN | EPOLLOUT| EPOLLRDHUP | EPOLLET);
+    void RegisterOnSocketErrCallback(callback_sockerr_t callback);
 
 protected:
     int32_t CreateEpoll();
@@ -51,6 +52,7 @@ private:
     std::shared_ptr<std::thread> th_loop_ { nullptr };
     bool shutdown_flag_ { true };
     callback_accept_t accept_callback_ { nullptr };
+    callback_sockerr_t sockerr_callback_ { nullptr };
 };
 
 typedef std::shared_ptr<EpollReactor> EpollReactorPtr;

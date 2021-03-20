@@ -145,6 +145,11 @@ void EpollReactor::RegisterOnAcceptCallback(callback_accept_t callback) {
     accept_callback_ = callback;
 }
 
+void EpollReactor::RegisterOnSocketErrCallback(callback_sockerr_t callback) {
+    assert(!sockerr_callback_);
+    sockerr_callback_ = callback;
+}
+
 // only for server, client will never generate accept-event
 void EpollReactor::OnSocketAccept(void* ptr) {
     SocketBase* sock = static_cast<SocketBase*>(ptr);
@@ -224,6 +229,9 @@ void EpollReactor::OnSocketWrite(void* ptr) {
 void EpollReactor::OnSocketError(void* ptr) {
     BasicSocket* sock = static_cast<BasicSocket*>(ptr);
     sock->HandleError();
+    if (sockerr_callback_) {
+        sockerr_callback_(sock);
+    }
 }
 
 void EpollReactor::EpollLoop() {

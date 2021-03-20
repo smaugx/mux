@@ -63,6 +63,15 @@ void EventTrigger::RegisterOnAcceptCallback(callback_accept_t callback) {
     }
 }
 
+void EventTrigger::RegisterOnSocketErrCallback(callback_sockerr_t callback) {
+    int i = 0;
+    for (const auto& reactor : reactor_vec_) {
+        reactor->RegisterOnSocketErrCallback(callback);
+        MUX_DEBUG("register socket error callback reactor:{0}", i);
+        ++i;
+    }
+}
+
 
 int32_t EventTrigger::RegisterDescriptor(void* ptr, int events) {
     int i = 0;

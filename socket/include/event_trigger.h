@@ -27,6 +27,7 @@ public:
 
 public:
     void RegisterOnAcceptCallback(callback_accept_t callback);
+    void RegisterOnSocketErrCallback(callback_sockerr_t callback);
     int32_t RegisterDescriptor(void* ptr, int events = EPOLLIN | EPOLLOUT| EPOLLRDHUP | EPOLLET);
 
 private:

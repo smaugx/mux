@@ -26,7 +26,7 @@ int main(int argc, char* argv[]) {
     MUX_DEBUG("log init");
 
     std::string local_ip {"127.0.0.1"};
-    uint16_t local_port { 6666 };
+    uint16_t local_port { 10000 };
     if (argc >= 2) {
         local_ip = std::string(argv[1]);
     }
@@ -69,11 +69,15 @@ int main(int argc, char* argv[]) {
     bench_tcp_acceptor->RegisterNewSocketRecvCallback(dispath_call);
 
     // create and init EventTrigger
-    int ep_num = 8;
+    int ep_num = 2;
     std::shared_ptr<transport::EventTrigger> event_trigger = std::make_shared<transport::EventTrigger>(ep_num);
     auto accept_callback = [&](int32_t cli_fd, const std::string& remote_ip, uint16_t remote_port) -> transport::BasicSocket* {
         return bench_tcp_acceptor->OnSocketAccept(cli_fd, remote_ip, remote_port);
     };
+    auto sockerr_callback = [&](transport::BasicSocket* sock) -> void {
+        bench_tcp_acceptor->OnSocketErr(sock);
+    };
+
     event_trigger->Start();
 
     if (!bench_tcp_acceptor->Start()) {
@@ -84,6 +88,7 @@ int main(int argc, char* argv[]) {
 
     // attention: RegisterDescriptor must after Start
     event_trigger->RegisterOnAcceptCallback(accept_callback);
+    event_trigger->RegisterOnSocketErrCallback(sockerr_callback);
     //event_trigger->RegisterDescriptor((void*)bench_tcp_acceptor, EPOLLIN | EPOLLRDHUP | EPOLLET | EPOLLEXCLUSIVE);
     event_trigger->RegisterDescriptor((void*)bench_tcp_acceptor);
 

@@ -20,6 +20,9 @@ static const int32_t WRITE_EVENT = 1;
 static const uint32_t RINGBUF_IN_SIZE = 20 * 1024; // 20KB
 static const uint32_t RINGBUF_OUT_SIZE = 20 * 1024; // 20KB
 
+//static const uint32_t RINGBUF_IN_SIZE = 4 * 1024; // 20KB
+//static const uint32_t RINGBUF_OUT_SIZE = 4 * 1024; // 20KB
+
 using RingBuffer =  transport::ring_buffer_s;
 
 

@@ -35,5 +35,6 @@ enum PacketPriority {
 
 using callback_recv_t    = std::function<void(PacketPtr&)>;
 using callback_accept_t  = std::function<transport::BasicSocket*(int32_t, const std::string&, uint16_t)>;
+using callback_sockerr_t = std::function<void(transport::BasicSocket*)>;
 
 }

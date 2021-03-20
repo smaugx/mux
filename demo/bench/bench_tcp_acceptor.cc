@@ -33,6 +33,28 @@ transport::BasicSocket* BenchTcpAcceptor::OnSocketAccept(int32_t cli_fd, const s
     return transport::TcpAcceptor::ManageNewConnection(new_sock);
 }
 
+void BenchTcpAcceptor::OnSocketErr(transport::BasicSocket* sock) {
+    {
+        std::unique_lock<std::mutex> lock(session_mutex_);
+        std::string key = sock->GetRemoteIp() + ":" + std::to_string(sock->GetRemotePort());
+        auto ifind = session_.find(key);
+        if (ifind == session_.end()) {
+            MUX_WARN("can't found socket {0}", key);
+            return;
+        }
+        // remove socket from map
+        session_.erase(ifind);
+
+        BenchSocket* new_sock = dynamic_cast<BenchSocket*>(sock);
+        delete new_sock;
+        new_sock = nullptr;
+
+        MUX_INFO("remove connection {0}, now size:{1}", key, session_.size());
+    }
+
+
+}
+
 
 transport::BasicSocket* BenchTcpAcceptor::FindSession(const std::string& ip_port) {
     {
